@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to Excel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        .container {
+            max-width: 7000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+
+        textarea, input {
+            width: 100%;
+            margin-top: 10px;
+            font-size: 14px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f8f8f8;
+        }
+
+        button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            font-size: 14px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 24px;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>JSON to Excel Converter</h1>
+        <input type="text" id="partnerName" placeholder="Enter Partner Name...">
+        <textarea id="jsonInput" placeholder="Paste your JSON code here..."></textarea>
+        <button id="downloadExcel">Download as Excel</button>
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>BaseProductID</th>
+                    <th>WPS</th>
+                    <th>WPS isDefault</th>
+                    <th>ProductID</th>
+                    <th>isMandatory</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.getElementById('jsonInput').addEventListener('input', function() {
+            const jsonInput = document.getElementById('jsonInput').value;
+            if (jsonInput.trim() === '') {
+                clearTable();
+                return;
+            }
+
+            try {
+                const data = JSON.parse(jsonInput);
+                populateTable(data);
+            } catch (error) {
+                alert('Invalid JSON data. Please check your input.');
+            }
+        });
+
+        function populateTable(data) {
+            const tableBody = document.querySelector('#dataTable tbody');
+            tableBody.innerHTML = '';
+
+            const productRows = [];
+
+            (data.baseProductInfo || []).forEach(baseProduct => {
+                const baseProductId = baseProduct.baseProductId || '';
+                const wps = (baseProduct.wps || []).join(', ');
+                const isDefault = (baseProduct.isDefault || []).join(', ');
+
+                (baseProduct.product || []).forEach(product => {
+                    productRows.push({
+                        BaseProductID: baseProductId,
+                        WPS: wps,
+                        "WPS isDefault": isDefault,
+                        ProductID: product.ProductID || '',
+                        isMandatory: product.isMandatory || '',
+                        Description: product.description || ''
+                    });
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${baseProductId}</td>
+                        <td>${wps}</td>
+                        <td>${isDefault}</td>
+                        <td>${product.ProductID || ''}</td>
+                        <td>${product.isMandatory || ''}</td>
+                        <td>${product.description || ''}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            });
+
+            // Save rows globally for Excel export
+            window.productRows = productRows;
+        }
+
+        function clearTable() {
+            const tableBody = document.querySelector('#dataTable tbody');
+            tableBody.innerHTML = '';
+            window.productRows = [];
+        }
+
+        document.getElementById('downloadExcel').addEventListener('click', function() {
+            if (!window.productRows || window.productRows.length === 0) {
+                alert('No data to export!');
+                return;
+            }
+
+            const partnerName = document.getElementById('partnerName').value.trim();
+            if (!partnerName) {
+                alert('Please enter a partner name!');
+                return;
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(window.productRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'BaseProductInfo');
+
+            const fileName = `${partnerName}_output.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+        });
+    </script>
+</body>
+</html>

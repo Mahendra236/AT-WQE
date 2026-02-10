@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Excel Filter & Export Tool - Enhanced</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+    $('#applyCascadingFilters').click(function () {
+      updateCascadingFilters();
+      applyFilters();
+    });
+
+</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+    $('#applyCascadingFilters').click(function () {
+      updateCascadingFilters();
+      applyFilters();
+    });
+
+</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js">
+    $('#applyCascadingFilters').click(function () {
+      updateCascadingFilters();
+      applyFilters();
+    });
+
+</script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js">
+    $('#applyCascadingFilters').click(function () {
+      updateCascadingFilters();
+      applyFilters();
+    });
+
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/clusterize.js@0.18.1/clusterize.min.js">
+    $('#applyCascadingFilters').click(function () {
+      updateCascadingFilters();
+      applyFilters();
+    });
+
+</script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js">
+    $('#applyCascadingFilters').click(function () {
+      updateCascadingFilters();
+      applyFilters();
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <style>
+  :root {
+    --primary: #007BFF;
+    --secondary: #2196F3;
+    --danger: #f44336;
+    --bg-light: #f9f9f9;
+    --bg-medium: #e0e0e0;
+    --bg-dark: #ccc;
+    --border: #ccc;
+    --text-color: #333;
+    --hover-bg: #f0f0f0;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 15px;
+    color: var(--text-color);
+    line-height: 1.5;
+  }
+
+  /* Layout Rows */
+  .top-row, .dropdown-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 20px 0;
+  }
+
+  .top-row > div, .dropdown-section {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  /* Dropdown Section */
+.dropdown-section {
+  background: #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: left;
+  min-width: 240px;
+}
+
+.dropdown-section label {
+  font-weight: bold;
+  font-size: 14px;
+  background: #ccc;
+  padding: 6px 10px;
+  display: block;
+  border-radius: 4px;
+  margin-bottom: 5px;
+}
+
+  .dropdown-section input[type="search"] {
+    width: 100%;
+    margin-top: 10px;
+    padding: 6px 25px 6px 6px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .search-input-container {
+    position: relative;
+  }
+
+  .search-input-container::after {
+    content: "▼";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #666;
+  }
+  
+
+  /* Button Styles */
+  .btn {
+    background-color: var(--primary);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn.secondary { background-color: var(--secondary); }
+  .btn.reset { background-color: var(--danger); }
+
+  /* Checkbox Dropdown */
+  .checkbox-list {
+    display: none;
+    position: relative;
+    z-index: 1000;
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    padding: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .checkbox-list div {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .checkbox-list div:hover {
+    background-color: var(--hover-bg);
+  }
+
+  .checkbox-list input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+  }
+
+  .checkbox-list label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: normal;
+    cursor: pointer;
+    background: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Selection Controls */
+  .selection-controls {
+    background: #f5f5f5;
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #ddd;
+    gap: 10px;
+  }
+
+  .selection-controls button {
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid #999;
+    background: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .selection-controls button:hover {
+    background: var(--hover-bg);
+  }
+
+  .selected-count {
+    font-size: 12px;
+    color: #666;
+  }
+
+  /* Info Display */
+  #activeFilters {
+    margin-top: 20px;
+    font-style: italic;
+    color: #555;
+  }
+
+  .filter-tag {
+    display: inline-block;
+    background: var(--bg-medium);
+    padding: 4px 8px;
+    margin: 2px;
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .filter-tag:hover {
+    background: #d0d0d0;
+  }
+
+  #recordCount {
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+ 
+  .chunk-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: rgba(0, 123, 255, 0.02);
+  border: 1px solid rgba(0, 123, 255, 0.1);
+  width: fit-content;
+}
+
+.chunk-link:hover {
+  background: rgba(0, 123, 255, 0.05);
+  border-color: rgba(0, 123, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.chunk-link i {
+  color: #007BFF;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.chunk-link:hover i {
+  color: #0056b3;
+  transform: scale(1.1);
+}
+
+.chunk-link a {
+  color: #007BFF;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+.chunk-link a:hover {
+  color: #0056b3;
+}
+
+.chunk-link a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background: #007BFF;
+  transition: width 0.3s ease;
+}
+
+.chunk-link:hover a::after {
+  width: 100%;
+}
+  .select2-container--default .select2-selection--single {
+  height: 36px;
+  border: 1px solid #999;
+  border-radius: 4px;
+  padding-left: 6px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 36px;
+  color: #333;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 36px;
+  right: 6px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: #888;
+}
+
+/* Modern Table Styling */
+#scrollArea {
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: auto; /* Enables horizontal scroll */
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+
+table {
+  width: 100%;
+  min-width: 1000px; /* You can adjust based on expected column count */
+  border-collapse: collapse;
+  font-size: 14px;
+  table-layout: auto; /* Don't use fixed layout for horizontal scroll */
+}
+
+
+th, td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: left;
+  background-color: #fff;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background-color: #007BFF;
+  color: white;
+  z-index: 2;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+}
+
+tr:nth-child(even) td {
+  background-color: #f9f9f9;
+}
+
+tr:hover td {
+  background-color: #f1f1f1;
+}
+
+
+</style>
+
+</head>
+<!-- Overlay with spinner -->
+<div id="loadingSpinner" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(255,255,255,0.8); z-index:9999; text-align:center; padding-top:20%;">
+  <div style="font-size: 18px; color:#007BFF; font-weight: bold;">
+    <i class="fa fa-spinner fa-spin" style="font-size:24px;"></i><br>
+    Processing Excel File...
+  </div>
+</div>
+
+<body>
+
+
+ <div class="top-row">
+  <div>
+    <label for="excelFile"><strong>Upload Excel File</strong></label>
+    <input type="file" id="excelFile" accept=".xlsx, .xls"
+           style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" />
+  </div>
+  <div>
+    <label for="sheetSelect"><strong>Sheet Selection</strong></label>
+   <select id="sheetSelect" class="sheet-select"
+        style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" data-placeholder="Search or select a sheet">
+  <option value="">-- Select Sheet --</option>
+</select>
+  </div>
+  <div>
+    <label for="fileName"><strong>File Name</strong></label>
+    <input type="text" id="fileName" placeholder="Enter filename for export"
+           style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" />
+  </div>
+</div>
+
+
+  <div id="formContainer" class="dropdown-row"></div>
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+  <button id="applyCascadingFilters" class="btn">Apply Filters</button>
+    <button id="clearFilters" class="btn reset">Clear Filters</button>
+  <button id="exportExcel" class="btn secondary">Download Excel</button>
+  <label for="rowsPerFile" style="margin-left: 15px; font-size: 14px;"><strong>Rows Per File:</strong></label>
+  <input type="number" id="rowsPerFile" placeholder="50" value="50" min="1" max="10000"
+         style="width: 80px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;" />
+		 <button id="generateExcels" class="btn secondary">Generate Excels</button>
+
+</div>
+
+
+<div id="chunkLinks" style="margin-top:10px;"></div>
+<div id="zipLoading" style="display:none; color:#007BFF; font-weight:bold;">Generating ZIP file, please wait...</div>
+
+
+  <div id="activeFilters"></div>
+  <div id="recordCount"></div>
+  <div id="scrollArea">
+  <table id="dataTable">
+    <thead id="tableHead"></thead>
+    <tbody id="contentArea" class="clusterize-content"></tbody>
+  </table>
+</div>
+
+
+  <script>
+    let workbookData = null, currentSheetData = [], filteredSheetData = [], fullHeaders = [], clusterize = null, originalColumnData = {};
+    const expectedColumns = ['SERVICE', 'FLOW', 'PARTNERID', 'PARTNER_NAME', 'PARTNER_TYPE'];
+    const autoSelectValues = {
+  PARTNERID: ['117', '144', '136', '20047', '20002', '1', '78'],
+  FLOW: ['ACTIVATE', 'DEACTIVATE','REACTIVATE']
+};
+
+    $(document).ready(function () {
+      $('#sheetSelect').select2({ placeholder: "-- Select Sheet --" });
+      $('#sheetSelect').on('change', function () { loadSheet(this.value); });
+      
+      // Close dropdowns when clicking outside
+      $(document).click(function(e) {
+        if (!$(e.target).closest('.dropdown-section').length) {
+          $('.checkbox-list').hide();
+        }
+      });
+    });
+
+    function debounce(func, delay) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
+    document.getElementById('excelFile').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Show loading spinner
+  $('#loadingSpinner').show();
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      workbookData = workbook;
+      const sheets = workbook.SheetNames.filter(n => n.startsWith('New_AT_Regression'));
+
+      if (sheets.length === 0) {
+        const allSheets = workbook.SheetNames;
+        $('#sheetSelect').html('<option value="">-- Select Sheet --</option>' + allSheets.map(s => `<option value="${s}">${s}</option>`).join('')).trigger('change.select2');
+        alert("No sheets starting with 'New_AT_Regression' found. Showing all sheets.");
+      } else {
+        $('#sheetSelect').html('<option value="">-- Select Sheet --</option>' + sheets.map(s => `<option value="${s}">${s}</option>`).join('')).trigger('change.select2');
+      }
+
+    } catch (err) {
+      alert("Error processing Excel file.");
+      console.error(err);
+    } finally {
+      // Hide spinner
+      $('#loadingSpinner').hide();
+    }
+  };
+
+  reader.onerror = function () {
+    alert("Failed to read the file.");
+    $('#loadingSpinner').hide();
+  };
+
+  reader.readAsArrayBuffer(file);
+});
+
+
+    function loadSheet(name) {
+      $('#formContainer').empty();
+      $('#activeFilters').empty();
+      $('#tableHead').empty();
+      if (clusterize) { clusterize.destroy(true); clusterize = null; }
+      $('#recordCount').text('');
+      if (!name) return;
+
+      const sheet = workbookData.Sheets[name];
+      const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      if (data.length === 0) {
+        alert("No data found in the selected sheet.");
+        return;
+      }
+
+      currentSheetData = data;
+      filteredSheetData = data;
+      fullHeaders = Object.keys(data[0]);
+      
+      updateTableHeader(fullHeaders);
+
+      const columnData = {};
+      const availableExpectedColumns = expectedColumns.filter(col => fullHeaders.includes(col));
+      
+      if (availableExpectedColumns.length === 0) {
+        alert("None of the expected columns (SERVICE, FLOW, PARTNERID, PARTNER_NAME, PARTNER_TYPE) were found in this sheet.");
+        showTable(data);
+        return;
+      }
+
+      availableExpectedColumns.forEach(col => {
+        const colValues = data.map(r => r[col]);
+        const uniqueValues = [...new Set(colValues.map(v => {
+          const val = String(v || '').trim();
+          return val === '' ? null : val.toUpperCase();
+        }).filter(v => v !== null))];
+        
+        columnData[col] = uniqueValues.sort();
+      });
+
+      originalColumnData = { ...columnData };
+      generateForm(columnData);
+// Auto-select filters based on config
+setTimeout(() => {
+  Object.entries(autoSelectValues).forEach(([column, values]) => {
+    const available = values.filter(val =>
+      $(`input[name='${column}'][value='${val}']`).length > 0
+    );
+
+    if (available.length > 0) {
+      available.forEach(val => {
+        $(`input[name='${column}'][value='${val}']`).prop('checked', true);
+      });
+      updateSelectedCount(column);
+    }
+  });
+
+  updateCascadingFilters();
+  applyFilters();
+}, 200);
+
+
+
+      showTable(data);
+    }
+
+    function updateTableHeader(headers) {
+      const headerRow = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+      $('#tableHead').html(headerRow);
+    }
+
+    function generateForm(data) {
+      $('#formContainer').empty();
+      
+      for (let col in data) {
+        const values = Array.isArray(data[col]) ? data[col] : [];
+        
+        if (values.length === 0) continue;
+        
+        const checkboxes = values.map(v => 
+          `<div>
+            <input type='checkbox' name='${col}' value='${v}' class='filter-check' data-column='${col}' id='${col}_${v}' />
+            <label for='${col}_${v}'>${v}</label>
+          </div>`
+        ).join('');
+        
+        const section = $(`
+  <div class="dropdown-section">
+    <label for='${col}'>${col}<span class="selected-count" id="count-${col}"> (0/${values.length} selected)</span></label>
+    <div class="search-input-container">
+      <input type="search" placeholder="Select ${col}..." readonly onclick="toggleCheckboxList('${col}')" />
+    </div>
+    <div class="checkbox-list" id="list-${col}">
+      <div class="selection-controls">
+        <button type="button" onclick="selectAll('${col}')">Select All</button>
+        <button type="button" onclick="selectNone('${col}')">Clear All</button>
+        <input type="search" placeholder="Search..." onkeyup="filterCheckboxes('${col}', this.value)" onclick="event.stopPropagation()" />
+      </div>
+      ${checkboxes}
+    </div>
+  </div>
+`);
+        $('#formContainer').append(section);
+      }
+      
+      $('.filter-check').off('change').on('change', debounce(function() {
+        updateSelectedCount($(this).data('column'));
+        applyFilters();
+      }, 300));
+      
+      // Initialize counts
+      Object.keys(data).forEach(col => updateSelectedCount(col));
+    }
+
+    function updateSelectedCount(col) {
+      const total = $(`input[name='${col}']`).length;
+      const selected = $(`input[name='${col}']:checked`).length;
+      $(`#count-${col}`).text(`(${selected}/${total} selected)`);
+      
+      // Update search input placeholder
+      const searchInput = $(`#list-${col}`).siblings('.search-input-container').find('input[type="search"]');
+      if (selected === 0) {
+        searchInput.attr('placeholder', `Select ${col}...`);
+      } else if (selected === 1) {
+        const selectedValue = $(`input[name='${col}']:checked`).first().val();
+        searchInput.attr('placeholder', `${selectedValue} (+${selected-1} more)`);
+      } else {
+        const firstSelected = $(`input[name='${col}']:checked`).first().val();
+        searchInput.attr('placeholder', `${firstSelected} (+${selected-1} more)`);
+      }
+    }
+
+    function selectAll(col) {
+      $(`#list-${col} input[type="checkbox"]:visible`).prop('checked', true);
+      updateSelectedCount(col);
+      updateCascadingFilters();
+      applyFilters();
+    }
+
+    function selectNone(col) {
+      $(`input[name='${col}']`).prop('checked', false);
+      updateSelectedCount(col);
+      updateCascadingFilters();
+      applyFilters();
+    }
+
+    function toggleCheckboxList(col) {
+      const list = $(`#list-${col}`);
+      if (list.is(':visible')) {
+        list.hide();
+      } else {
+        $('.checkbox-list').hide();
+        list.show();
+        // Focus on search input when opened
+        list.find('input[type="search"]').focus();
+      }
+    }
+
+    function updateCascadingFilters() {
+      const selectedFilters = {};
+      expectedColumns.forEach(col => {
+        const selected = $(`input[name='${col}']:checked`).map(function () { 
+          return String(this.value).trim().toUpperCase(); 
+        }).get();
+        if (selected.length > 0) {
+          selectedFilters[col] = selected;
+        }
+      });
+
+      if (Object.keys(selectedFilters).length === 0) {
+        expectedColumns.forEach(col => {
+          if (originalColumnData[col]) {
+            updateDropdownOptions(col, originalColumnData[col]);
+          }
+        });
+        return;
+      }
+
+      let cascadeFilteredData = [...currentSheetData];
+      
+      Object.keys(selectedFilters).forEach(col => {
+        cascadeFilteredData = cascadeFilteredData.filter(row => {
+          const rowValue = String(row[col] || '').trim().toUpperCase();
+          return selectedFilters[col].includes(rowValue);
+        });
+      });
+
+      expectedColumns.forEach(col => {
+        if (!originalColumnData[col]) return;
+        
+        const availableValues = [...new Set(cascadeFilteredData.map(row => {
+          const val = String(row[col] || '').trim();
+          return val === '' ? null : val.toUpperCase();
+        }).filter(v => v !== null))].sort();
+        
+        updateDropdownOptions(col, availableValues, selectedFilters[col] || []);
+      });
+    }
+
+    function updateDropdownOptions(col, availableValues, selectedValues = []) {
+      const container = $(`#list-${col}`);
+      const searchInput = container.find('.selection-controls input[type="search"]');
+      const searchTerm = searchInput.val() || '';
+      
+      // Clear existing options (except selection controls)
+      container.find('div:not(.selection-controls)').remove();
+      
+      // Add available options
+      availableValues.forEach(value => {
+        const isSelected = selectedValues.includes(value);
+        const checkbox = $(`
+          <div>
+            <input type='checkbox' name='${col}' value='${value}' class='filter-check' data-column='${col}' id='${col}_${value}' ${isSelected ? 'checked' : ''} />
+            <label for='${col}_${value}'>${value}</label>
+          </div>
+        `);
+        container.append(checkbox);
+      });
+      
+      // Update the label to show available count
+      const selectedCount = selectedValues.length;
+      $(`#count-${col}`).text(`(${selectedCount}/${availableValues.length} selected)`);
+      
+      // Apply search filter if there was one
+      if (searchTerm) {
+        filterCheckboxes(col, searchTerm);
+      }
+      
+      // Reattach event handlers
+      container.find('.filter-check').off('change').on('change', debounce(function() {
+        updateSelectedCount($(this).data('column'));
+        applyFilters();
+      }, 300));
+    }
+
+    function filterCheckboxes(col, term) {
+      $(`#list-${col} div:not(.selection-controls)`).each(function () {
+        const label = $(this).text().toLowerCase();
+        $(this).toggle(label.includes(term.toLowerCase()));
+      });
+    }
+
+    function applyFilters() {
+      let filtered = [...currentSheetData];
+      let tags = [];
+      
+      const activeColumns = [...new Set($('.filter-check').map(function() { return $(this).data('column'); }).get())];
+      
+      activeColumns.forEach(col => {
+        const selected = $(`input[name='${col}']:checked`).map(function () { 
+          return String(this.value).trim().toUpperCase(); 
+        }).get();
+        
+        if (selected.length > 0) {
+          tags.push(...selected.map(val => `<span class='filter-tag' data-col='${col}' data-val='${val}'>${col}: ${val} ×</span>`));
+          filtered = filtered.filter(row => {
+            const rowValue = String(row[col] || '').trim().toUpperCase();
+            return selected.includes(rowValue);
+          });
+        }
+      });
+      
+      filteredSheetData = filtered;
+      $('#activeFilters').html(tags.length ? `<strong>Active Filters:</strong><br>${tags.join(' ')}` : '');
+      $('#activeFilters .filter-tag').off('click').on('click', function () {
+        const col = $(this).data('col');
+        const val = $(this).data('val');
+        $(`input[name='${col}'][value='${val}']`).prop('checked', false);
+        updateSelectedCount(col);
+        updateCascadingFilters();
+        applyFilters();
+      });
+	  
+// 1. Update all expiryDateTime fields
+const todayPlus30 = new Date();
+todayPlus30.setDate(todayPlus30.getDate() + 30);
+const isoDate = todayPlus30.toISOString().split('.')[0]; // e.g. "2024-07-31T00:00:00"
+
+filtered.forEach(row => {
+  if (row['MATCH_REQUEST'] && typeof row['MATCH_REQUEST'] === 'string') {
+    row['MATCH_REQUEST'] = row['MATCH_REQUEST'].replace(
+      /"expiryDateTime"\s*:\s*"[^"]*"/g,
+      `"expiryDateTime": "${isoDate}"`
+    );
+  }
+});
+
+// 2. Append suffix to duplicate SERVICE values (only for displayed/filtered rows)
+const serviceTracker = {};
+
+filtered.forEach((row, index) => {
+  let originalService = row['SERVICE'];
+  if (!originalService) return;
+
+  // Always strip existing _N suffix to restore original
+  const baseService = originalService.replace(/(_\d+)+$/, '');
+
+  // Initialize or increment counter for each baseService
+  if (!serviceTracker[baseService]) {
+    serviceTracker[baseService] = 1;
+  } else {
+    serviceTracker[baseService]++;
+  }
+
+  row['SERVICE'] = `${baseService}_${serviceTracker[baseService]}`;
+});
+
+
+      showTable(filtered);
+    }
+
+    $('#clearFilters').click(function () {
+      $('input[type=checkbox]').prop('checked', false);
+      $('#activeFilters').empty();
+      
+      // Reset all counts
+      expectedColumns.forEach(col => {
+        if (originalColumnData[col]) {
+          updateDropdownOptions(col, originalColumnData[col]);
+          updateSelectedCount(col);
+        }
+      });
+      
+      filteredSheetData = currentSheetData;
+      showTable(currentSheetData);
+    });
+
+    function showTable(data) {
+      $('#recordCount').text(`Records found: ${data.length}`);
+      const rows = data.map(row => `<tr>${fullHeaders.map(h => `<td>${row[h] || ''}</td>`).join('')}</tr>`);
+      if (!clusterize) {
+        clusterize = new Clusterize({ rows, scrollId: 'scrollArea', contentId: 'contentArea' });
+      } else {
+        clusterize.update(rows);
+      }
+    }
+
+    function exportFiltered(type) {
+      if (filteredSheetData.length === 0) {
+        alert('No data to export');
+        return;
+      }
+      const ws = XLSX.utils.json_to_sheet(filteredSheetData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Filtered');
+      XLSX.writeFile(wb, `Filtered_Data.${type}`);
+    }
+
+    $('#exportExcel').click(() => exportFiltered('xlsx'));
+    $('#exportCSV').click(() => exportFiltered('csv'));
+    $('#exportPDF').click(() => {
+      if (filteredSheetData.length === 0) {
+        alert('No data to export');
+        return;
+      }
+      const doc = new jspdf.jsPDF();
+      const data = filteredSheetData.map(row => fullHeaders.map(h => row[h] || ''));
+      doc.autoTable({ head: [fullHeaders], body: data });
+      doc.save('Filtered_Data.pdf');
+    });
+  
+    $('#applyCascadingFilters').click(function () {
+      updateCascadingFilters();
+      applyFilters();
+    });
+
+ function chunkArray(array, chunkSize) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+  }
+
+  // Triggered when data is filtered or loaded
+  function checkGenerateExcelsVisibility() {
+  const rowsPerFile = parseInt($('#rowsPerFile').val()) || 50;
+  if (filteredSheetData.length > rowsPerFile) {
+    $('#generateExcels').show();
+  } else {
+    $('#generateExcels').hide();
+    $('#chunkLinks').empty();
+  }
+}
+
+  // Call visibility check inside applyFilters and showTable
+  const originalShowTable = showTable;
+  showTable = function(data) {
+    originalShowTable(data);
+    checkGenerateExcelsVisibility();
+  }
+
+  // Validate filename before any export
+  function validateFileName() {
+    const fileNamePrefix = $('#fileName').val().trim();
+    if (!fileNamePrefix) {
+      alert('Please enter a file name before downloading.');
+      return null;
+    }
+    return fileNamePrefix;
+  }
+
+  // Generate Excels in chunks
+  $('#generateExcels').click(async function () {
+  const fileNamePrefix = validateFileName();
+  if (!fileNamePrefix) return;
+
+  const rowsPerFile = parseInt($('#rowsPerFile').val()) || 50;
+  
+  if (rowsPerFile <= 0) {
+    alert('Please enter a valid number of rows per file (minimum 1).');
+    return;
+  }
+
+  const chunks = chunkArray(filteredSheetData, rowsPerFile);
+
+  $('#chunkLinks').empty();
+  $('#zipLoading').show();
+
+  const zip = new JSZip();
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const from = i * rowsPerFile + 1;
+    const to = from + chunk.length - 1;
+    const sheet = XLSX.utils.json_to_sheet(chunk);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, sheet, 'Chunk');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const fileName = `${fileNamePrefix}_Row_${from}_to_${to}.xlsx`;
+    zip.file(fileName, blob);
+
+    const url = URL.createObjectURL(blob);
+    const link = $(`
+      <div class="chunk-link">
+        <i class="fa fa-download"></i>
+        <a href="${url}" download="${fileName}">${fileName}</a>
+        <span>(${chunk.length} rows)</span>
+      </div>
+    `);
+    $('#chunkLinks').append(link);
+  }
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const zipUrl = URL.createObjectURL(zipBlob);
+
+  const zipDownloadLink = $(`
+    <div style='margin-top:10px;'>
+      <a class='btn' href='${zipUrl}' download='${fileNamePrefix}_All Files.zip'>Download All as ZIP</a>
+    </div>
+  `);
+  $('#chunkLinks').append(zipDownloadLink);
+  $('#zipLoading').hide();
+});
+
+// Add input validation and real-time update
+$('#rowsPerFile').on('input', function() {
+  const value = parseInt($(this).val());
+  if (value && value > 0) {
+    checkGenerateExcelsVisibility();
+  }
+});
+
+  // Apply same validation to standard Excel download
+  $('#exportExcel').off('click').on('click', () => {
+  // Validate file name
+  const fileNamePrefix = $('#fileName').val().trim();
+  if (!fileNamePrefix) {
+    alert('Please enter a file name before downloading.');
+    return;
+  }
+
+  // Validate data
+  if (!filteredSheetData || filteredSheetData.length === 0) {
+    alert('No data to export');
+    return;
+  }
+
+  // Export one single Excel file
+  const ws = XLSX.utils.json_to_sheet(filteredSheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Filtered');
+  XLSX.writeFile(wb, `${fileNamePrefix}.xlsx`);
+
+  // Clear any old chunk links or ZIP UI (safety cleanup)
+  $('#chunkLinks').empty();
+  $('#zipLoading').hide();
+});
+</script>
+
+</body>
+</html>

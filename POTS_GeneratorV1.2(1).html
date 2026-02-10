@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+
+    <title>Pots Generator</title>
+    <style>
+     :root {
+    --primary-color: #4361ee;
+    --primary-hover: #3a56d4;
+    --secondary-color: #f72585;
+    --secondary-hover: #e91e63;
+    --success-color: #06d6a0;
+    --success-hover: #05c091;
+    --text-color: #333333;
+    --text-light: #8d99ae;
+    --bg-color: #ffffff;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --radius: 8px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            line-height: 1.5;
+}
+
+.form-container {
+
+    background-color:  #fff;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 8px;
+    max-width: 100%;
+    width: 100%;
+	position: sticky;
+
+   
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 calc(20% - 20px);
+    margin-right: 10px; /* Add this */
+	    border-radius: var(--radius);
+
+}
+
+
+label {
+    font-weight: bold;
+            color: #007BFF;
+            margin-bottom: 8px;
+}
+
+.required:after {
+    content: " *";
+    color: var(--secondary-color);
+}
+
+/* Uniform size for input, select, textarea, button */
+/* Apply a consistent border and radius to all form elements */
+input[type="text"],
+input[type="date"],
+input[type="file"],
+select,
+textarea,
+.select2-container--default .select2-selection--single,
+.custom-dropdown .dropdown-selected ,.btn{
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    height: 36px !important;
+    padding: 6px 10px !important;
+    font-size: 13px;
+    background-color: #fff;
+    color: #333333;
+    box-sizing: border-box;
+}
+
+/* Ensure Select2 matches */
+.select2-container--default .select2-selection--single {
+    border: 2px solid #ccc !important;
+    border-radius: 10px !important;
+    height: 36px !important;
+}
+
+/* Custom dropdown fix */
+.dropdown-selected {
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    background-color: #fff;
+    height: 36px;
+}
+
+/* Align file input with others */
+input[type="file"] {
+    padding: 6px 10px !important;
+    font-size: 13px;
+    height: 36px !important;
+}
+
+/* Optional: active/focus state consistency */
+input:focus,
+select:focus,
+textarea:focus,
+.select2-container--default .select2-selection--single:focus,
+.custom-dropdown .dropdown-selected.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    outline: none;
+}
+
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+}
+
+
+
+.date-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.date-container input {
+    cursor: pointer;
+}
+
+/* File input section */
+.combined-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: stretch;
+    margin-top: 20px;
+}
+
+.file-input {
+    display: flex;
+    flex-direction: column;
+    gap: px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 300px;
+}
+
+.file-input input[type="file"] {
+    padding: 6px 10px !important;
+    font-size: 13px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    cursor: pointer;
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+    height: 38px !important;
+}
+
+.file-input input[type="file"]:hover {
+   padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            width: 100%;
+            box-sizing: border-box;
+}
+
+.file-input-label {
+    font-weight: bold;
+            color: #007BFF;
+            margin-bottom: 8px;
+}
+
+.file-status {
+    font-size: 13px;
+    color: #777;
+    padding-left: 4px;
+}
+
+/* Button styling */
+.btn {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    padding: 6px 14px;
+    font-size: 13px !important;
+    font-weight: 500;
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
+    box-shadow: 0 2px 6px rgba(67, 97, 238, 0.15);
+}
+.btn i {
+    margin-right: 6px;
+}
+
+.btn:hover {
+    background-color: var(--primary-hover);
+    box-shadow: 0 4px 10px rgba(67, 97, 238, 0.25);
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-danger:hover {
+    background-color: var(--secondary-hover);
+    box-shadow: 0 4px 10px rgba(247, 37, 133, 0.25);
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+}
+
+.btn-success:hover {
+    background-color: var(--success-hover);
+    box-shadow: 0 4px 10px rgba(6, 214, 160, 0.25);
+}
+.btn-primary {
+    background-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+
+/* Excel preview styles */
+#excelPreview {
+    background-color: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-top: 0; /* 👈 reduced or removed the gap */
+}
+
+#excelPreview h3 {
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+table {
+   width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+}
+
+table th {
+     background-color: #007BFF;
+            color: white;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+			position: sticky;
+            top: 0;
+            z-index: 2;
+            padding: 6px 16px;
+            text-align: left;
+}
+
+table td {
+    padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            word-wrap: break-word;
+}
+
+table tr:hover {
+    background-color: #def0ef;
+}
+
+.download-btn {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.download-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+/* Select2 Styling */
+.select2-container--default .select2-selection--single {
+    height: 38px !important;
+    padding: 6px 10px;
+    border: 2px solid #ccc !important;
+    border-radius: 10px !important;
+    background-color: #f9f9f9;
+    font-size: 13px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 38px;
+    top: 4px;
+    right: 10px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.2;
+    color: #1d3557; /* A custom darker color */
+    padding-left: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+}
+.select2-container--default .select2-results__option {
+    font-size: 14px;            /* Size of dropdown values */
+    font-family: 'Poppins', sans-serif;  /* Matches your current font */
+    color: #1d3557;             /* Custom color */
+    padding: 8px 12px;          /* Space around text */
+}
+
+/* Optional: highlight on hover */
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #4361ee;  /* Your primary color */
+    color: #ffffff;
+}
+input[type="date"] {
+    width: 100% !important;
+}
+.custom-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-selected {
+    height: 38px !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    font-family: inherit;
+    color: var(--text-color);
+    background-color: var(--card-bg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dropdown-selected:focus,
+.dropdown-selected.active {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+}
+
+.dropdown-arrow {
+    transition: transform 0.2s;
+}
+
+.dropdown-arrow.rotate {
+    transform: rotate(180deg);
+}
+
+.dropdown-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #ccc;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.dropdown-options.show {
+    display: block;
+}
+
+.dropdown-option {
+     padding: 4px 10px;
+    font-size: 13px;
+    line-height: 1.2;
+}
+.dropdown-option label {
+    font-size: 10px; /* optional */
+}
+.dropdown-option:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-option input[type="checkbox"] {
+    margin: 0;
+    width: auto;
+    height: auto;
+}
+
+.dropdown-option label {
+    margin: 0;
+    font-weight: normal;
+    cursor: pointer;
+    color: var(--text-color);
+    font-size: 13px;
+    flex: 1;
+}
+
+
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <form id="storyForm">
+            <!-- First row with 4 fields -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="environment" class="required">Environment</label>
+                    <select id="environment" name="environment" required data-placeholder="Select Environment">				
+					    <option value="" disabled selected>Select Environment</option>
+					</select>
+                </div>
+
+                <div class="form-group">
+                    <label for="owner" class="required">Owner</label>
+                    <select id="owner" name="owner" required data-placeholder="Select Owner">
+					    <option value="" disabled selected>Select Owner</option>
+					</select>
+                </div>
+
+                <div class="form-group">
+                    <label for="releaseDate" class="required">Release Date</label>
+                    <div class="date-container" id="releaseDateContainer">
+                        <input type="date" id="releaseDate" name="releaseDate" required style="width: 100%;">
+                    </div>
+                </div>
+
+
+                <div class="form-group">
+                    <label for="scrum" class="required">Scrum</label>
+                    <select id="scrum" name="scrum" required data-placeholder="Select Scrum">
+					    <option value="" disabled selected>Select Scrum</option>
+					</select>
+                </div>
+            </div>
+
+            <!-- Second row with 2 fields -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="storyId" class="required">Story ID</label>
+                    <input type="text" id="storyId" name="storyId" placeholder="Enter Story ID" required>
+                </div>
+
+                <div class="form-group" style="flex: 100;">
+                    <label for="summary" class="required">Summary</label>
+                    <textarea id="summary" name="summary" placeholder="Enter story summary here..." required></textarea>
+                </div>
+              
+                <div class="form-group">
+    <label for="testData">Test Data</label>
+    <div class="custom-dropdown" id="testDataDropdown">
+        <div class="dropdown-selected" tabindex="0">
+            <span class="selected-text">Select Required Data</span>
+            <span class="dropdown-arrow">▼</span>
+        </div>
+        <div class="dropdown-options" id="testDataOptions">
+            <!-- Options will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+            <div class="form-group">
+                  <label for="executionDate">Execution Date</label>
+                  <div class="date-container" id="executionDateContainer">
+                      <input type="date" id="executionDate" name="executionDate" required style="width: 100%;">
+                  </div>
+              </div>
+
+            </div>
+            <!-- Combined row with file inputs and action buttons -->
+            <div class="combined-row">
+                <div class="file-input">
+                    <input type="file" id="excelFile" name="excelFile" accept=".xlsx,.xls">
+									    <div class="file-input-label">Excel File</div>
+                </div>
+
+                <div class="file-input">
+                    <input type="file" id="wordFile" name="wordFile" accept=".rtf,.doc,.docx">
+									    <div class="file-input-label">Word File (RTF)</div>
+                </div>
+				
+                <button type="button" id="processBtn" class="btn btn-primary">Process</button>
+				<button type="button" id="downloadAllBtn" class="btn btn-success">Selected <i class="fa-solid fa-file-arrow-down"></i></i></i></button>
+				<button type="button" id="downloadZipBtn" class="btn btn-success">Zip File Selected <i class="fa-solid fa-file-zipper"></i></i></i></button>
+				<button type="button" id="mergeAllBtn" class="btn btn-success">Merge  <i class="fa-solid fa-circle-down"></i></i></button>
+                <button type="button" id="clearBtn" class="btn btn-danger">Clear  <i class="fa-solid fa-eraser"></i></button>
+            </div>
+        </form>
+    </div>
+    
+    <div id="excelPreview">
+        <table id="excelTable">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAllCheckbox"></th>
+                    <th>S.No</th>
+                    <th>Title</th>
+                    <th>Test Description</th>
+                    <th>Download</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Define all dropdown values as constants
+        const environmentValues = [
+            'QLAB02', 'QLAB03', 'QLAB06', 'QLAB07','UAT5', 'UAT8', 'PIT','PROD'
+        ];
+        
+        const ownerValues = [
+            'Anusuya Yuvaraj', 'Janardhan N', 'Premkumar Kandasamy', 'Rajasekhar Mallampalli', 'Sareddy Mahendra Reddy',
+			'Anil B Jadhav', 'Emmareddy Jayasimhareddy', 'Jaishekar Gunashekar', 'Jampana Naga Poojitha', 'Karthik Kannan Meyyappan',
+			'Kusuma S', 'Lakshmi Bhavani Rama Satya Garlapati', 'Latha M', 'Prajwal K G', 'Preethi K', 'Rayabrolu Supriya Sai Lakshmi',
+			'Rohith kumar Gowda H N', 'Spoorthi M N', 'Latha M', 'T L Bhargavi', 'Tejaswini R', 'Tousif Ahmed', 'Yadhushree Ashok'
+
+        ];
+        
+        
+        const testDataValues = [
+            'MSISDN', 'ICCID', 'Transaction ID', 'CR ID', 'Bulk File','Transaction Datails'
+        ];
+
+        const scrumValues = [
+            'WHSL Chromium', 'WHSL Cobalt', 'WHSL Copper', 'WHSL Iron', 'WHSL Nickel', 'WHSL Palladium', 'WHSL Titanium', 'WHSL Vibranium', 'B&M','OnBoarding', 'PCW Stage 1/1.5'
+        ];
+		
+		
+
+function createTestDataDropdown() {
+    const optionsContainer = document.getElementById('testDataOptions');
+    const selectedDiv = document.querySelector('#testDataDropdown .dropdown-selected');
+    const selectedText = selectedDiv.querySelector('.selected-text');
+    const arrow = selectedDiv.querySelector('.dropdown-arrow');
+    
+    // Clear existing options
+    optionsContainer.innerHTML = '';
+    
+    // Create checkbox options
+    testDataValues.forEach(function(value) {
+        const option = document.createElement('div');
+        option.className = 'dropdown-option';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = 'testData_' + value.toLowerCase().replace(/\s+/g, '_');
+        checkbox.name = 'testData';
+        checkbox.value = value.toLowerCase().replace(/\s+/g, '_');
+        
+        const label = document.createElement('label');
+        label.htmlFor = checkbox.id;
+        label.textContent = value;
+        
+        // Add event listener to update selected text
+        checkbox.addEventListener('change', updateSelectedText);
+        
+        option.appendChild(checkbox);
+        option.appendChild(label);
+        optionsContainer.appendChild(option);
+    });
+    
+    // Toggle dropdown
+    selectedDiv.addEventListener('click', function() {
+        const isOpen = optionsContainer.classList.contains('show');
+        if (isOpen) {
+            optionsContainer.classList.remove('show');
+            selectedDiv.classList.remove('active');
+            arrow.classList.remove('rotate');
+        } else {
+            optionsContainer.classList.add('show');
+            selectedDiv.classList.add('active');
+            arrow.classList.add('rotate');
+        }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('testDataDropdown').contains(e.target)) {
+            optionsContainer.classList.remove('show');
+            selectedDiv.classList.remove('active');
+            arrow.classList.remove('rotate');
+        }
+    });
+    
+    // Prevent dropdown from closing when clicking on options
+    optionsContainer.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    
+    function updateSelectedText() {
+        const selectedCheckboxes = document.querySelectorAll('input[name="testData"]:checked');
+        const count = selectedCheckboxes.length;
+        
+        if (count === 0) {
+            selectedText.innerHTML = 'Select Required Data';
+        } else if (count === 1) {
+            const value = selectedCheckboxes[0].value;
+            const displayText = testDataValues.find(item => 
+                item.toLowerCase().replace(/\s+/g, '_') === value
+            );
+            selectedText.innerHTML = displayText;
+        } else {
+            selectedText.innerHTML = `${count} items selected`;
+        }
+    }
+}
+
+// Function to get selected test data values (keep existing)
+function getSelectedTestData() {
+    const checkboxes = document.querySelectorAll('input[name="testData"]:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+		
+        document.addEventListener("DOMContentLoaded", function () {
+		
+    function initDropdown(id) {
+        const $select = $('#' + id);
+        const placeholder = $select.data('placeholder');
+
+        $select.select2({
+            width: '100%',
+            placeholder: placeholder,
+            allowClear: true,
+            language: {
+                searching: function () {
+                    return "Searching...";
+                },
+                inputTooShort: function () {
+                    return "";
+                }
+            }
+        });
+
+        // Set placeholder inside the search box when dropdown opens
+        $select.on('select2:open', function () {
+            let searchBox = document.querySelector('.select2-container--open .select2-search__field');
+            if (searchBox) {
+                searchBox.placeholder = "Select Required data ";
+            }
+        });
+    }
+
+    initDropdown('environment');
+    initDropdown('owner');
+    initDropdown('scrum');
+    createTestDataDropdown();
+    initDropdown('testData');
+
+});
+
+        // Function to populate a dropdown from an array
+        function populateDropdown(selectId, valuesArray) {
+            const dropdown = document.getElementById(selectId);
+            // Clear existing options except the first one
+            while (dropdown.options.length > 1) {
+                dropdown.remove(1);
+            }
+            
+            // Add new options from the array
+            valuesArray.forEach(function(value) {
+                const option = document.createElement('option');
+                option.value = value.toLowerCase().replace(/\s+/g, '_');
+                option.textContent = value;
+                dropdown.appendChild(option);
+            });
+        }
+        
+        // Populate all dropdowns
+        populateDropdown('environment', environmentValues);
+        populateDropdown('owner', ownerValues);
+        populateDropdown('scrum', scrumValues);
+        
+        // Make the entire date container clickable to open the date picker
+        document.getElementById('releaseDateContainer').addEventListener('click', function () {
+        document.getElementById('releaseDate').showPicker();
+        });
+        
+        document.getElementById('executionDateContainer').addEventListener('click', function () {
+            document.getElementById('executionDate').showPicker();
+        });
+
+        
+        // File input name display
+        document.getElementById('excelFile').addEventListener('change', function() {
+            const fileName = this.files[0] ? this.files[0].name : 'No file selected';
+            document.getElementById('excelFileName').textContent = fileName;
+        });
+        
+        document.getElementById('wordFile').addEventListener('change', function() {
+            const fileName = this.files[0] ? this.files[0].name : 'No file selected';
+            document.getElementById('wordFileName').textContent = fileName;
+        });
+		
+		function getTestDataRTF() {
+    const testDataSelect = $('#testData').val(); // Get selected values from multi-select
+    
+    if (!testDataSelect || testDataSelect.length === 0) {
+        return ''; // Return empty string if no test data selected
+    }
+    
+    let testDataRTF = `\\pard\\par\\f0\\fs22\\cf0\\b Test Data:\\b0\\par\\par`;
+    
+    // Create table rows for each selected test data value
+    testDataSelect.forEach(value => {
+        // Convert value back to display text
+        const displayText = testDataValues.find(item => 
+            item.toLowerCase().replace(/\s+/g, '_') === value
+        ) || value;
+        
+        testDataRTF += `
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b ${displayText}\\b0\\cell\\cell\\row`;
+    });
+    
+    testDataRTF += `\\pard\\par`;
+    
+    return testDataRTF;
+}
+
+        
+        // Process button functionality
+        document.getElementById('processBtn').addEventListener('click', function() {
+            // Get form values
+            const environment = document.getElementById('environment').value;
+            const owner = document.getElementById('owner').value;
+            const releaseDate = document.getElementById('releaseDate').value;
+            const scrum = document.getElementById('scrum').value;
+            const storyId = document.getElementById('storyId').value;
+            const summary = document.getElementById('summary').value;
+            const excelFile = document.getElementById('excelFile').files[0];
+            const wordFile = document.getElementById('wordFile').files[0];
+            
+            // Validate required fields
+            if (!environment || !owner || !releaseDate || !scrum || !storyId || !summary) {
+                alert('Please fill all required fields marked with *');
+                return;
+            }
+            
+            // Log form data (in a real application, you would send this to a server)
+            console.log({
+                environment,
+                owner,
+                releaseDate,
+                scrum,
+                storyId,
+                summary,
+                excelFileName: excelFile ? excelFile.name : 'No file selected',
+                wordFileName: wordFile ? wordFile.name : 'No file selected'
+            });
+            
+            if (!excelFile) {
+                alert("Please upload an Excel file.");
+                return;
+            }
+
+            if (!wordFile) {
+                alert("Please upload an RTF Word file.");
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                const tbody = document.querySelector("#excelTable tbody");
+                tbody.innerHTML = ""; // Clear previous
+
+                json.forEach((row, i) => {
+                    if (row.length < 1) return;
+
+                    const tr = document.createElement('tr');
+
+                    // Checkbox cell
+                    const tdCheckbox = document.createElement('td');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.name = 'rowSelect';
+                    checkbox.value = i;
+                    tdCheckbox.appendChild(checkbox);
+                    tr.appendChild(tdCheckbox);
+
+                    // Data cells (first 3 columns)
+                   for (let j = 0; j < 3; j++) {
+                   const td = document.createElement('td');
+               
+                   // Auto-fill S.No if Column A (row[0]) is empty and this is the first column
+                   if (j === 0 && (!row[0] || row[0].toString().trim() === '')) {
+                       td.textContent = i+1; // or (i + 1) if you want to start from 1
+                   } else {
+                       td.textContent = row[j] !== undefined ? row[j] : '';
+                   }
+               
+                   tr.appendChild(td);
+               }
+
+
+                    // Download button cell
+                    const tdDownload = document.createElement('td');
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Download';
+                    btn.className = 'download-btn';
+                    btn.addEventListener('click', function () {
+    const wordFile = document.getElementById('wordFile').files[0];
+    if (!wordFile) {
+        alert("Please upload an RTF file first.");
+        return;
+    }
+
+    const formatRTFText = (text) => {
+        return text
+            .toString()
+            .replace(/\\/g, '\\\\')
+            .replace(/{/g, '\\{')
+            .replace(/}/g, '\\}')
+            .replace(/\r\n|\n/g, '\\line ');
+    };
+
+    const readerRTF = new FileReader();
+    readerRTF.onload = function (e2) {
+        const originalRTF = e2.target.result;
+
+        const environment = $('#environment option:selected').text();
+        const owner = $('#owner option:selected').text();
+        const releaseDate = document.getElementById('releaseDate').value;
+        const executionDate = document.getElementById('executionDate').value;
+        const scrum = $('#scrum option:selected').text();
+        const storyId = document.getElementById('storyId').value;
+        const summary = document.getElementById('summary').value;
+        
+        const sNoValue = (row[0] && row[0].toString().trim() !== '') ? row[0] : (i + 1);
+        const col1 = formatRTFText(sNoValue);
+        const col2 = formatRTFText(row[1] || '');
+        const col3 = formatRTFText(row[2] || '');
+
+        // Build execution date row conditionally
+        const executionDateRow = executionDate ? `
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Execution Date\\b0\\cell ${formatRTFText(executionDate)}\\cell\\row` : '';
+
+        // Get test data RTF content
+        const testDataRTF = getTestDataRTF();
+
+const injectedContent = `
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Environment\\b0\\cell ${formatRTFText(environment)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Owner\\b0\\cell ${formatRTFText(owner)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Release Date\\b0\\cell ${formatRTFText(releaseDate)}\\cell\\row${executionDateRow}
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Scrum\\b0\\cell ${formatRTFText(scrum)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Story ID\\b0\\cell ${formatRTFText(storyId)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Summary\\b0\\cell ${formatRTFText(summary)}\\cell\\row
+
+\\pard\\par\\f0\\fs22\\cf0\\b Test Case Details\\b0\\par
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b S.No\\b0\\cell ${col1}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Title\\b0\\cell ${col2}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Test Description\\b0\\cell ${col3}\\cell\\row
+
+\\pard\\par\\f0\\fs22\\cf0\\b Test Execution Details:\\b0\\par
+${testDataRTF}
+\\pard\\par
+`;
+
+        if (!originalRTF.includes('}')) {
+            alert("Invalid RTF format: missing closing brace.");
+            return;
+        }
+
+        const updatedRTF = originalRTF.replace(/}\s*$/, injectedContent + '}');
+        const filename = `POT_${scrum}_${releaseDate}_${storyId}_TC_${sNoValue}.doc`;
+
+        const blob = new Blob([updatedRTF], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    readerRTF.readAsText(wordFile);
+});
+
+
+                    tdDownload.appendChild(btn);
+                    tr.appendChild(tdDownload);
+
+                    tbody.appendChild(tr);
+                });
+
+                // Enable Select All functionality
+                const selectAll = document.getElementById("selectAllCheckbox");
+                selectAll.checked = false;
+                selectAll.addEventListener("change", function () {
+                    const checkboxes = document.querySelectorAll('input[name="rowSelect"]');
+                    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+                });
+            };
+
+            reader.readAsArrayBuffer(excelFile);
+        });
+        
+        // Clear button functionality
+    // Fixed Clear Button functionality
+document.getElementById('clearBtn').addEventListener('click', function () {
+    // Clear input fields
+    document.getElementById('storyId').value = '';
+    document.getElementById('summary').value = '';
+    document.getElementById('excelFile').value = '';
+    
+
+    // Clear table content - THIS LINE WASN'T WORKING PROPERLY
+    document.querySelector("#excelTable tbody").innerHTML = '';
+
+    // Uncheck select all checkbox
+    document.getElementById("selectAllCheckbox").checked = false;
+});
+
+        
+        // Initialize Select2
+        document.addEventListener("DOMContentLoaded", function () {
+            $('#environment').select2({
+    width: '100%',
+    language: {
+        searchPlaceholder: "Search..."
+    }
+});
+$('#owner').select2({
+    width: '100%',
+    language: {
+        searchPlaceholder: "Search..."
+    }
+});
+$('#scrum').select2({
+    width: '100%',
+    language: {
+        searchPlaceholder: "Search..."
+    }
+});
+
+        });
+
+        // Download button functionality
+       document.getElementById('downloadAllBtn').addEventListener('click', function () {
+    const selectedCheckboxes = document.querySelectorAll('input[name="rowSelect"]:checked');
+    const wordFile = document.getElementById('wordFile').files[0];
+    const environment = $('#environment option:selected').text();
+    const owner = $('#owner option:selected').text();
+    const releaseDate = document.getElementById('releaseDate').value;
+    const executionDate = document.getElementById('executionDate').value;
+    const scrum = $('#scrum option:selected').text();
+    const storyId = document.getElementById('storyId').value;
+    const summary = document.getElementById('summary').value;
+
+    if (!selectedCheckboxes.length) {
+        alert("Please select at least one row.");
+        return;
+    }
+    if (!environment || !owner || !releaseDate || !scrum || !storyId || !summary || !wordFile) {
+        alert("Ensure all form fields are filled and a Word file is uploaded.");
+        return;
+    }
+
+    const readerRTF = new FileReader();
+    readerRTF.onload = function (e) {
+        const originalRTF = e.target.result;
+        const formatRTFText = (text) => {
+            return text.toString()
+                .replace(/\\/g, '\\\\')
+                .replace(/{/g, '\\{')
+                .replace(/}/g, '\\}')
+                .replace(/\r\n|\n/g, '\\line ');
+        };
+
+        // Build execution date row conditionally
+        const executionDateRow = executionDate ? `
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Execution Date\\b0\\cell ${formatRTFText(executionDate)}\\cell\\row` : '';
+
+        // Get test data RTF content
+        const testDataRTF = getTestDataRTF();
+
+        selectedCheckboxes.forEach(cb => {
+            const rowIndex = parseInt(cb.value);
+            const row = document.querySelectorAll("#excelTable tbody tr")[rowIndex];
+            const cells = row.querySelectorAll("td");
+            const sNo = cells[1].textContent;
+            const title = cells[2].textContent;
+            const description = cells[3].textContent;
+
+            const injected = `
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Environment\\b0\\cell ${formatRTFText(environment)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Owner\\b0\\cell ${formatRTFText(owner)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Release Date\\b0\\cell ${formatRTFText(releaseDate)}\\cell\\row${executionDateRow}
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Scrum\\b0\\cell ${formatRTFText(scrum)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Story ID\\b0\\cell ${formatRTFText(storyId)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Summary\\b0\\cell ${formatRTFText(summary)}\\cell\\row
+
+\\pard\\par\\b\\ Test Case Details\\b0\\fs20\\par
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b S.No\\b0\\cell ${formatRTFText(sNo)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Title\\b0\\cell ${formatRTFText(title)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Test Description\\b0\\cell ${formatRTFText(description)}\\cell\\row
+
+\\pard\\par\\b\\ Test Execution Details:\\b0\\fs20\\par
+${testDataRTF}
+\\pard\\par
+`;
+
+            const finalRTF = originalRTF.replace(/}\s*$/, injected + '}');
+            const filename = `POT_${scrum}_${releaseDate}_${storyId}_TC_${sNo}.doc`;
+
+            const blob = new Blob([finalRTF], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    };
+
+    readerRTF.readAsText(wordFile);
+});
+
+// Merge All button functionality
+document.getElementById('mergeAllBtn').addEventListener('click', function () {
+    const selectedCheckboxes = document.querySelectorAll('input[name="rowSelect"]:checked');
+    const wordFile = document.getElementById('wordFile').files[0];
+    const environment = $('#environment option:selected').text();
+    const owner = $('#owner option:selected').text();
+    const releaseDate = document.getElementById('releaseDate').value;
+    const scrum = $('#scrum option:selected').text();
+    const storyId = document.getElementById('storyId').value;
+    const summary = document.getElementById('summary').value;
+
+    if (!selectedCheckboxes.length) {
+        alert("Please select at least one row.");
+        return;
+    }
+    if (!environment || !owner || !releaseDate || !scrum || !storyId || !summary || !wordFile) {
+        alert("Ensure all form fields are filled and a Word file is uploaded.");
+        return;
+    }
+
+    const readerRTF = new FileReader();
+    readerRTF.onload = function (e) {
+        const originalRTF = e.target.result;
+        const formatRTFText = (text) => {
+            return text.toString()
+                .replace(/\\/g, '\\\\')
+                .replace(/{/g, '\\{')
+                .replace(/}/g, '\\}')
+                .replace(/\r\n|\n/g, '\\line ');
+        };
+
+        // Get test data RTF content
+        const testDataRTF = getTestDataRTF();
+
+        // Form content header (appears only once)
+        let mergedContent = `
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Environment\\b0\\cell ${formatRTFText(environment)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Owner\\b0\\cell ${formatRTFText(owner)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Release Date\\b0\\cell ${formatRTFText(releaseDate)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Scrum\\b0\\cell ${formatRTFText(scrum)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Story ID\\b0\\cell ${formatRTFText(storyId)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Summary\\b0\\cell ${formatRTFText(summary)}\\cell\\row
+
+\\pard\\par\\f0\\fs24\\cf0\\b Test Cases\\b0\\par\\par
+`;
+
+        // Add each selected row as a separate section
+        selectedCheckboxes.forEach((cb, index) => {
+            const rowIndex = parseInt(cb.value);
+            const row = document.querySelectorAll("#excelTable tbody tr")[rowIndex];
+            const cells = row.querySelectorAll("td");
+            const sNo = cells[1].textContent;
+            const title = cells[2].textContent;
+            const description = cells[3].textContent;
+
+            // Add page break between test cases (except for the first one)
+            if (index > 0) {
+                mergedContent += `\\page `;
+            }
+
+            mergedContent += `
+\\pard\\f0\\fs22\\cf0\\b Test Case ${index + 1}\\b0\\par\\par
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b S.No\\b0\\cell ${formatRTFText(sNo)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Title\\b0\\cell ${formatRTFText(title)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\f0\\fs22\\cf0\\b Test Description\\b0\\cell ${formatRTFText(description)}\\cell\\row
+
+\\pard\\par\\f0\\fs22\\cf0\\b Test Execution Details:\\b0\\par\\par
+${testDataRTF}
+`;
+        });
+
+        // Combine with original RTF
+        const finalRTF = originalRTF.replace(/}\s*$/, mergedContent + '}');
+        const filename = `POT_${scrum}_${releaseDate}_${storyId}_TCs.doc`;
+
+        // Download the merged file
+        const blob = new Blob([finalRTF], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    readerRTF.readAsText(wordFile);
+});
+
+document.getElementById('downloadZipBtn').addEventListener('click', function () {
+    const selectedCheckboxes = document.querySelectorAll('input[name="rowSelect"]:checked');
+    const wordFile = document.getElementById('wordFile').files[0];
+    const environment = $('#environment option:selected').text();
+    const owner = $('#owner option:selected').text();
+    const releaseDate = document.getElementById('releaseDate').value;
+    const executionDate = document.getElementById('executionDate').value;
+    const scrum = $('#scrum option:selected').text();
+    const storyId = document.getElementById('storyId').value;
+    const summary = document.getElementById('summary').value;
+
+    if (!selectedCheckboxes.length || !wordFile) {
+        alert("Please select rows and upload a Word file.");
+        return;
+    }
+
+    const readerRTF = new FileReader();
+    readerRTF.onload = function (e) {
+        const originalRTF = e.target.result;
+        const zip = new JSZip();
+
+        const formatRTFText = (text) => {
+            return text.toString()
+                .replace(/\\/g, '\\\\')
+                .replace(/{/g, '\\{')
+                .replace(/}/g, '\\}')
+                .replace(/\r\n|\n/g, '\\line ');
+        };
+
+        const testDataRTF = getTestDataRTF();
+
+        selectedCheckboxes.forEach(cb => {
+            const rowIndex = parseInt(cb.value);
+            const row = document.querySelectorAll("#excelTable tbody tr")[rowIndex];
+            const cells = row.querySelectorAll("td");
+            const sNo = cells[1].textContent;
+            const title = cells[2].textContent;
+            const description = cells[3].textContent;
+
+            const executionDateRow = executionDate ? `
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Execution Date\\b0\\cell ${formatRTFText(executionDate)}\\cell\\row` : '';
+
+            const injected = `
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Environment\\b0\\cell ${formatRTFText(environment)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Owner\\b0\\cell ${formatRTFText(owner)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Release Date\\b0\\cell ${formatRTFText(releaseDate)}\\cell\\row${executionDateRow}
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Scrum\\b0\\cell ${formatRTFText(scrum)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Story ID\\b0\\cell ${formatRTFText(storyId)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Summary\\b0\\cell ${formatRTFText(summary)}\\cell\\row
+
+\\pard\\par\\b\\ Test Case Details\\b0\\fs20\\par
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b S.No\\b0\\cell ${formatRTFText(sNo)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Title\\b0\\cell ${formatRTFText(title)}\\cell\\row
+
+\\trowd\\trgaph80\\trleft-100
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrl\\brdrs\\clbrdrr\\brdrs\\cellx2000
+\\clvertalc\\clbrdrt\\brdrs\\clbrdrb\\brdrs\\clbrdrr\\brdrs\\cellx10000
+\\intbl\\b Test Description\\b0\\cell ${formatRTFText(description)}\\cell\\row
+
+\\pard\\par\\b\\ Test Execution Details:\\b0\\fs20\\par
+${testDataRTF}
+\\pard\\par
+`;
+
+            const finalRTF = originalRTF.replace(/}\s*$/, injected + '}');
+            const filename = `POT_${scrum}_${releaseDate}_${storyId}_TC_${sNo}.doc`;
+            zip.file(filename, finalRTF);
+        });
+
+        zip.generateAsync({ type: "blob" }).then(function (content) {
+            const zipName = `POT_${scrum}_${releaseDate}_${storyId}.zip`;
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(content);
+            a.download = zipName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    };
+
+    readerRTF.readAsText(wordFile);
+});
+
+    </script>
+</body>
+</html>

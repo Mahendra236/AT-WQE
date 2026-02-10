@@ -1,0 +1,2018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+  <title>Excel Filter & Export Tool - Enhanced</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/clusterize.js@0.18.1/clusterize.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+  <style>
+  :root {
+    --primary: #007BFF;
+    --secondary: #2196F3;
+    --danger: #f44336;
+    --bg-light: #f9f9f9;
+    --bg-medium: #e0e0e0;
+    --bg-dark: #ccc;
+    --border: #ccc;
+    --text-color: #333;
+    --hover-bg: #f0f0f0;
+    --focus-outline: #2222ff;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 15px;
+    color: var(--text-color);
+    line-height: 1.5;
+  }
+
+  /* Layout Rows */
+ .top-row, .dropdown-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 16px 0;
+  align-items: flex-start;
+}
+
+
+  .top-row > div, .dropdown-section {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  /* Dropdown Section */
+.dropdown-section {
+  background: #e0e0e0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.dropdown-section label {
+  font-weight: bold;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+
+  .dropdown-section input[type="search"] {
+    width: 100%;
+    margin-top: 10px;
+    padding: 6px 25px 6px 6px;
+    border: 1px solid #999;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .search-input-container {
+    position: relative;
+  }
+
+  .search-input-container::after {
+    content: "▼";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: #666;
+  }
+  
+
+  /* Button Styles */
+  .btn {
+    background-color: var(--primary);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn.secondary { background-color: var(--secondary); }
+  .btn.reset { background-color: var(--danger); }
+
+  /* Checkbox Dropdown */
+  .checkbox-list {
+  display: none;
+  position: absolute;
+  z-index: 9999;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  padding: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+
+  .checkbox-list div {
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .checkbox-list div:hover {
+    background-color: var(--hover-bg);
+  }
+
+  .checkbox-list input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+  }
+
+  .checkbox-list label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: normal;
+    cursor: pointer;
+    background: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Selection Controls */
+  .selection-controls {
+    background: #f5f5f5;
+    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #ddd;
+    gap: 10px;
+  }
+
+  .selection-controls button {
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid #999;
+    background: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .selection-controls button:hover {
+    background: var(--hover-bg);
+  }
+
+  .selected-count {
+    font-size: 12px;
+    color: #666;
+  }
+
+  /* Info Display */
+  #activeFilters {
+    margin-top: 20px;
+    font-style: italic;
+    color: #555;
+  }
+
+  .filter-tag {
+    display: inline-block;
+    background: var(--bg-medium);
+    padding: 4px 8px;
+    margin: 2px;
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .filter-tag:hover {
+    background: #d0d0d0;
+  }
+
+  #recordCount {
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+ 
+  .chunk-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: rgba(0, 123, 255, 0.02);
+  border: 1px solid rgba(0, 123, 255, 0.1);
+  width: fit-content;
+}
+
+.chunk-link:hover {
+  background: rgba(0, 123, 255, 0.05);
+  border-color: rgba(0, 123, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
+}
+
+.chunk-link i {
+  color: #007BFF;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.chunk-link:hover i {
+  color: #0056b3;
+  transform: scale(1.1);
+}
+
+.chunk-link a {
+  color: #007BFF;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+.chunk-link a:hover {
+  color: #0056b3;
+}
+
+.chunk-link a::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background: #007BFF;
+  transition: width 0.3s ease;
+}
+
+.chunk-link:hover a::after {
+  width: 100%;
+}
+  .select2-container--default .select2-selection--single {
+  height: 36px;
+  border: 1px solid #999;
+  border-radius: 4px;
+  padding-left: 6px;
+  font-size: 14px;
+  background-color: white;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 36px;
+  color: #333;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+  height: 36px;
+  right: 6px;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: #888;
+}
+
+/* Modern Table Styling */
+#scrollArea {
+      position: relative;
+}
+.table-container {
+    max-height: 600px; /* Set your desired fixed height */
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+  }
+table {
+ width: 100%;
+    border-collapse: collapse;
+}
+
+
+
+th, td {
+  padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+   position: sticky;
+  top: 0;
+  background-color: #007BFF;
+  color: white;
+  z-index: 2;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+}
+
+tr:nth-child(even) td {
+  background-color: #f9f9f9;
+}
+
+tr:hover td {
+  background-color: #f1f1f1;
+}
+td.match-request-cell {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 400px;
+}
+#contentArea {
+    width: 100%;
+  }
+
+  .clusterize-scroll {
+    max-height: 600px; /* Should match .table-container height */
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+/* MATCH_REQUEST toggle checkbox style */
+.toggle-match-label {
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f1f1;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid #ccc;
+}
+
+.toggle-match-label input[type="checkbox"] {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+/* Hide MATCH_REQUEST column when toggle is off */
+.hide-match-request td.match-request-cell,
+.hide-match-request th.match-request-header {
+  display: none;
+}
+#columnVisibilityPanel div:last-child {
+  border-bottom: none;
+}
+#columnVisibilityPanel div:hover {
+  background-color: var(--hover-bg);
+}
+#columnVisibilityPanel input[type="checkbox"] {
+  margin-right: 8px;
+  transform: scale(1.1);
+}
+#columnVisibilityPanel label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: normal;
+  cursor: pointer;
+}
+td.tlo-cell, td.newtlo-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px; /* Adjust width as needed */
+}
+#paginationControls button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Styles for the new column filter popup */
+#columnFilterPopup {
+  display: none;
+  position: absolute;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 15px;
+  z-index: 10000; /* Ensure it's on top */
+  min-width: 250px;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+#columnFilterPopup h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: var(--primary);
+  font-size: 16px;
+}
+
+#columnFilterPopup .selection-controls {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+#columnFilterPopup .selection-controls input[type="search"] {
+  width: calc(100% - 10px);
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 5px;
+}
+
+#popupCheckboxList {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  padding: 5px;
+  margin-bottom: 10px;
+}
+
+#popupCheckboxList div {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+#popupCheckboxList div:hover {
+  background-color: var(--hover-bg);
+}
+
+#popupCheckboxList input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+#columnFilterPopup .popup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+#columnFilterPopup .popup-actions .btn {
+  padding: 8px 15px;
+  font-size: 0.75rem;
+  border-radius: 15px;
+}
+
+.filter-icon {
+  cursor: pointer;
+  margin-left: 5px;
+  color: #FFFFFF;
+  font-size: 12px;
+}
+
+.filter-icon.active {
+  color: #FFD700
+}
+
+</style>
+
+</head>
+<!-- Overlay with spinner -->
+<div id="loadingSpinner" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(255,255,255,0.8); z-index:9999; text-align:center; padding-top:20%;">
+  <div style="font-size: 18px; color:#007BFF; font-weight: bold;">
+    <i class="fa fa-spinner fa-spin" style="font-size:24px;"></i><br>
+    Processing Excel File...
+  </div>
+</div>
+
+<body>
+
+
+ <div class="top-row">
+  <div>
+    <label for="excelFile"><strong>Upload Excel File</strong></label>
+    <input type="file" id="excelFile" accept=".xlsx, .xls"
+           style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" />
+  </div>
+  <div>
+    <label for="sheetSelect"><strong>Sheet Selection</strong></label>
+   <select id="sheetSelect" class="sheet-select"
+        style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" data-placeholder="Search or select a sheet">
+  <option value="">-- Select Sheet --</option>
+</select>
+  </div>
+  <div>
+    <label for="fileName"><strong>File Name</strong></label>
+    <input type="text" id="fileName" placeholder="Enter filename for export"
+           style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" />
+  </div>
+</div>
+
+  <div id="formContainer" class="dropdown-row"></div>
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+  <button id="applyCascadingFilters" class="btn">Apply Filters</button>
+  <button id="clearFilters" class="btn reset">Clear Filters</button>
+  <button id="exportExcel" class="btn secondary">Download Excel</button>
+  <button id="duplicateRowsBtn" class="btn secondary">Duplicate Rows</button>
+  <button id="exportTCButton" class="btn secondary">Export TC's</button>
+  <button id="partnerTCsBtn" class="btn secondary">Partner TC's</button>
+
+  <label for="rowsPerFile" style="font-size: 14px;"><strong>Rows Per File:</strong></label>
+  <input type="number" id="rowsPerFile" placeholder="50" value="50" min="1" max="10000"
+         style="width: 80px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px;" />
+  <button id="generateExcels" class="btn secondary">Generate Excels</button>
+  	<button id="dashboardButton" class="btn secondary">Dashboard</button>
+
+    <span id="recordCount" style="font-weight: bold; font-size: 14px; margin-left: auto;"></span>
+</div>
+<div id="dashboardModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;; display: flex;">
+  <div style="background:white; padding:20px; border-radius:10px; max-height:80%; width: 1200px; overflow:auto;">
+    <h3 style="margin-top:0;">Flow Count by Partner</h3>
+    <table id="dashboardTable" style="border-collapse: collapse; width: 100%;">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <div style="text-align:right; margin-top:10px;">
+      <button id="exportDashboardExcel" class="btn secondary" style="margin-right:10px;">Export Dashboard to Excel</button>
+      <button onclick="$('#dashboardModal').hide()" class="btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="chunkLinks" style="margin-top:10px;"></div>
+<div id="zipLoading" style="display:none; color:#007BFF; font-weight:bold;">Generating ZIP file, please wait...</div>
+
+
+  <!--<div id="activeFilters"></div>-->
+  <div id="recordCount"></div>
+<div class="table-container">
+  <div id="scrollArea">
+    <table id="dataTable">
+      <thead id="tableHead"></thead>
+      <tbody id="contentArea"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="paginationControls" style="display: none; align-items: center; justify-content: center; gap: 20px; margin-top: 20px;">
+  <button id="prevPage" class="btn secondary">Previous</button>
+  <span id="pageNumber" style="font-size: 14px; font-weight: bold;"></span>
+  <button id="nextPage" class="btn secondary">Next</button>
+</div>
+
+<!-- Column Filter Pop-up -->
+<div id="columnFilterPopup">
+  <h4 id="popupColumnName"></h4>
+  <div class="selection-controls">
+    <button type="button" id="popupSelectAll">Select All</button>
+    <button type="button" id="popupClearAll">Clear All</button>
+    <input type="search" id="popupSearchInput" placeholder="Search..." />
+  </div>
+  <div id="popupCheckboxList">
+    <!-- Checkboxes will be dynamically inserted here -->
+  </div>
+  <div class="popup-actions">
+    <button type="button" id="popupApply" class="btn">Apply</button>
+    <button type="button" id="popupCancel" class="btn reset">Cancel</button>
+  </div>
+</div>
+
+
+    <script>
+    let workbookData = null, currentSheetData = [], filteredSheetData = [], fullHeaders = [], clusterize = null, originalColumnData = {};
+    const expectedColumns = ['SERVICE', 'FLOW', 'PARTNERID', 'PARTNER_NAME', 'PARTNER_TYPE'];
+    const autoSelectValues = {
+      PARTNER_NAME: ['AERIS_IOT', 'CINTEX', 'DISH_MVNO', 'EARTHLINK, LLC', 'NOVA', 'TWILIONB', 'ULTRA'],
+      FLOW: ['ACTIVATE', 'DEACTIVATE','REACTIVATE','ACTIVATEWITHPORTIN','UPDATEMISCSUBSCRIBERDETAILS']
+    };
+
+    // Store active header filters
+    let activeHeaderFilters = {}; // { 'COLUMN_NAME': ['value1', 'value2'], ... }
+    let currentPopupColumn = null; // To keep track of which column's filter is open
+
+    $(document).ready(function () {
+      $('#sheetSelect').select2({ placeholder: "-- Select Sheet --" });
+      $('#sheetSelect').on('change', function () { loadSheet(this.value); });
+      
+      // Close dropdowns and popups when clicking outside
+      $(document).click(function(e) {
+        if (!$(e.target).closest('.dropdown-section').length) {
+          $('.checkbox-list').hide();
+        }
+        if (!$(e.target).closest('#columnFilterPopup').length && !$(e.target).hasClass('filter-icon')) {
+          $('#columnFilterPopup').hide();
+        }
+      });
+
+      // Popup button handlers
+      $('#popupSelectAll').on('click', function() {
+        $('#popupCheckboxList input[type="checkbox"]:visible').prop('checked', true);
+      });
+      $('#popupClearAll').on('click', function() {
+        $('#popupCheckboxList input[type="checkbox"]:visible').prop('checked', false);
+      });
+      $('#popupSearchInput').on('keyup', debounce(function() {
+        const searchTerm = $(this).val().toLowerCase();
+        $('#popupCheckboxList div').each(function() {
+          const label = $(this).find('label').text().toLowerCase();
+          $(this).toggle(label.includes(searchTerm));
+        });
+      }, 200));
+      $('#popupApply').on('click', function() {
+        const selectedValues = $('#popupCheckboxList input[type="checkbox"]:checked').map(function() {
+          return $(this).val();
+        }).get();
+        
+        if (selectedValues.length > 0) {
+          activeHeaderFilters[currentPopupColumn] = selectedValues.map(v => String(v).trim().toLowerCase());
+          $(`.filter-icon[data-column="${currentPopupColumn}"]`).addClass('active');
+        } else {
+          delete activeHeaderFilters[currentPopupColumn];
+          $(`.filter-icon[data-column="${currentPopupColumn}"]`).removeClass('active');
+        }
+        $('#columnFilterPopup').hide();
+        applyTableColumnFilters();
+      });
+      $('#popupCancel').on('click', function() {
+        $('#columnFilterPopup').hide();
+      });
+    });
+
+    function debounce(func, delay) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
+    document.getElementById('excelFile').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+if (!file) return;
+
+// ✅ Show spinner during Excel parsing
+$('#loadingSpinner').show();
+
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      workbookData = workbook;
+      const sheets = workbook.SheetNames.filter(n => n.startsWith('New_AT_Regression'));
+
+      if (sheets.length === 0) {
+        const allSheets = workbook.SheetNames;
+        $('#sheetSelect').html('<option value="">-- Select Sheet --</option>' + allSheets.map(s => `<option value="${s}">${s}</option>`).join('')).trigger('change.select2');
+        alert("No sheets starting with 'New_AT_Regression' found. Showing all sheets.");
+      } else {
+        $('#sheetSelect').html('<option value="">-- Select Sheet --</option>' + sheets.map(s => `<option value="${s}">${s}</option>`).join('')).trigger('change.select2');
+      }
+
+    } catch (err) {
+      alert("Error processing Excel file.");
+      console.error(err);
+    } finally {
+      // Hide spinner
+      $('#loadingSpinner').hide();
+    }
+  };
+
+  reader.onerror = function () {
+    alert("Failed to read the file.");
+    $('#loadingSpinner').hide();
+  };
+
+  reader.readAsArrayBuffer(file);
+});
+
+
+   function loadSheet(name) {
+  $('#formContainer').empty();
+  $('#activeFilters').empty();
+  $('#tableHead').empty();
+  //if (clusterize) { clusterize.destroy(true); clusterize = null; }
+  $('#recordCount').text('');
+  if (!name) return;
+
+  // 🔵 Show "Processing..." spinner
+  $('#loadingSpinner').show();
+
+  const sheet = workbookData.Sheets[name];
+  const data = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+  if (data.length === 0) {
+    $('#loadingSpinner').hide(); // 🔴 Hide on error
+    alert("No data found in the selected sheet.");
+    return;
+  }
+
+  currentSheetData = data;
+  filteredSheetData = data;
+  fullHeaders = Object.keys(data[0]);
+
+  updateTableHeader(fullHeaders);
+
+  const columnData = {};
+  const availableExpectedColumns = expectedColumns.filter(col => fullHeaders.includes(col));
+
+  if (availableExpectedColumns.length === 0) {
+    alert("None of the expected columns (SERVICE, FLOW, PARTNERID, PARTNER_NAME, PARTNER_TYPE) were found in this sheet.");
+    showTable(data);
+    $('#loadingSpinner').hide(); // ✅ Hide after display
+    return;
+  }
+
+  availableExpectedColumns.forEach(col => {
+    const colValues = data.map(r => r[col]);
+    const uniqueValues = [...new Set(colValues.map(v => {
+      const val = String(v || '').trim();
+      return val === '' ? null : val.toUpperCase();
+    }).filter(v => v !== null))];
+    
+    columnData[col] = uniqueValues.sort();
+  });
+
+  originalColumnData = { ...columnData };
+  generateForm(columnData);
+
+  // Auto-select filters based on config
+  setTimeout(() => {
+    Object.entries(autoSelectValues).forEach(([column, values]) => {
+      const available = values.filter(val =>
+        $(`input[name='${column}'][value='${val}']`).length > 0
+      );
+
+      if (available.length > 0) {
+        available.forEach(val => {
+          $(`input[name='${column}'][value='${val}']`).prop('checked', true);
+        });
+        updateSelectedCount(column);
+      }
+    });
+
+    updateCascadingFilters();
+    applyTableColumnFilters(); // Call the consolidated filter function
+
+    // ✅ Done loading: hide spinner
+    $('#loadingSpinner').hide();
+  }, 200);
+
+  showTable(data); // Table will populate here initially
+}
+
+function updateTableHeader(headers) {
+  // 1. Preserve existing checked columns
+  const currentSelections = {};
+  $('#columnSelectorList input[type="checkbox"]').each(function () {
+    const col = $(this).data('col');
+    currentSelections[col] = $(this).is(':checked');
+  });
+
+  // 2. Add TEST_RUN_ID and ENABLED handling
+  const modifiedHeaders = ['TEST_RUN_ID', ...headers];
+  if (modifiedHeaders.includes('MATCH_REQUEST') && !modifiedHeaders.includes('ENABLED')) {
+    const idx = modifiedHeaders.indexOf('MATCH_REQUEST') + 1;
+    modifiedHeaders.splice(idx, 0, 'ENABLED');
+  }
+  fullHeaders = modifiedHeaders;
+
+  // 3. Build header row with filter icons
+  const headerRow = '<tr>' + modifiedHeaders.map(h => {
+    const className = h === 'MATCH_REQUEST' ? 'match-request-header' : '';
+    const isActive = activeHeaderFilters[h] && activeHeaderFilters[h].length > 0 ? 'active' : '';
+    return `<th class="${className}">
+              ${h} <i class="fas fa-filter filter-icon ${isActive}" data-column="${h}"></i>
+            </th>`;
+  }).join('') + '</tr>';
+  $('#tableHead').html(headerRow);
+
+  // 4. Re-render checkboxes in the dropdown
+  renderColumnSelector(fullHeaders);
+
+  // 5. Restore checked/unchecked state from before
+  for (const col in currentSelections) {
+    const checkbox = $(`#col_${col}`);
+    if (checkbox.length) {
+      checkbox.prop('checked', currentSelections[col]).trigger('change');
+    }
+  }
+   
+  // Attach click listener to filter icons
+  $('.filter-icon').off('click').on('click', function(e) {
+    e.stopPropagation(); // Prevent table sort if implemented
+    const column = $(this).data('column');
+    openColumnFilterPopup(column, $(this));
+  });
+}
+
+// Function to open the column filter popup
+function openColumnFilterPopup(columnName, $clickedIcon) {
+  currentPopupColumn = columnName;
+  $('#popupColumnName').text(`Filter ${columnName}`);
+  $('#popupSearchInput').val(''); // Clear search input
+
+  const uniqueValues = [...new Set(currentSheetData.map(row => 
+    String(row[columnName] || '').trim()))].filter(v => v).sort();
+
+  let checkboxesHtml = '';
+  const currentSelected = activeHeaderFilters[columnName] || [];
+
+  uniqueValues.forEach(val => {
+    const isChecked = currentSelected.includes(String(val).trim().toLowerCase()) ? 'checked' : '';
+    checkboxesHtml += `
+      <div>
+        <input type="checkbox" id="popup_filter_${columnName}_${val.replace(/\s/g, '_')}" value="${val}" ${isChecked} />
+        <label for="popup_filter_${columnName}_${val.replace(/\s/g, '_')}">${val}</label>
+      </div>
+    `;
+  });
+  $('#popupCheckboxList').html(checkboxesHtml);
+
+  // Position the popup
+  const iconOffset = $clickedIcon.offset();
+  const iconHeight = $clickedIcon.outerHeight();
+  const popup = $('#columnFilterPopup');
+  
+  // Calculate position to avoid going off-screen
+  let top = iconOffset.top + iconHeight + 5;
+  let left = iconOffset.left;
+
+  // Adjust if it goes off the right edge
+  const viewportWidth = $(window).width();
+  const popupWidth = popup.outerWidth();
+  if (left + popupWidth > viewportWidth - 20) { // 20px margin from right edge
+    left = viewportWidth - popupWidth - 20;
+  }
+  // Ensure it doesn't go off the left edge
+  if (left < 10) {
+    left = 10;
+  }
+
+  popup.css({
+    top: top + 'px',
+    left: left + 'px'
+  }).show();
+}
+
+
+// Consolidated filtering function
+function applyTableColumnFilters() {
+  let tempFilteredData = [...currentSheetData]; // Always start with the full current sheet data
+
+  // 1. Collect filters from dropdowns (main form)
+  const dropdownFilters = {};
+  expectedColumns.forEach(col => {
+    const selected = $(`input[name='${col}']:checked`).map(function () {
+      return String(this.value).trim().toUpperCase();
+    }).get();
+    if (selected.length > 0) {
+      dropdownFilters[col] = selected;
+    }
+  });
+
+  // 2. Collect filters from header icons (activeHeaderFilters object)
+  // activeHeaderFilters is already populated by openColumnFilterPopup's Apply button
+  
+  // 3. Apply all collected filters
+  tempFilteredData = tempFilteredData.filter(row => {
+    let passesAllFilters = true;
+
+    // Apply main dropdown filters
+    for (const col in dropdownFilters) {
+      const rowValue = String(row[col] || '').trim().toUpperCase();
+      if (!dropdownFilters[col].includes(rowValue)) {
+        passesAllFilters = false;
+        break;
+      }
+    }
+
+    if (!passesAllFilters) return false; // If it fails dropdown filters, no need to check header filters
+
+    // Apply header icon filters
+    for (const col in activeHeaderFilters) {
+      const rowValue = String(row[col] || '').trim().toLowerCase();
+      if (!activeHeaderFilters[col].includes(rowValue)) { // Check if row value is in selected header filter values
+        passesAllFilters = false;
+        break;
+      }
+    }
+
+    return passesAllFilters;
+  });
+
+  filteredSheetData = tempFilteredData; // Update the global filtered data
+  currentPage = 1; // Reset pagination
+
+  // Update active filter tags display (from dropdowns)
+  let tags = [];
+  const activeColumns = [...new Set($('.filter-check').map(function () {
+    return $(this).data('column');
+  }).get())];
+
+  activeColumns.forEach(col => {
+    const selected = $(`input[name='${col}']:checked`).map(function () {
+      return String(this.value).trim().toUpperCase();
+    }).get();
+    if (selected.length > 0) {
+      tags.push(...selected.map(val => `<span class='filter-tag' data-col='${col}' data-val='${val}'>${col}: ${val} ×</span>`));
+    }
+  });
+  $('#activeFilters').html(tags.length ? `<strong>Active Filters:</strong><br>${tags.join(' ')}` : '');
+  $('#activeFilters .filter-tag').off('click').on('click', function () {
+    const col = $(this).data('col');
+    const val = $(this).data('val');
+    $(`input[name='${col}'][value='${val}']`).prop('checked', false);
+    updateSelectedCount(col);
+    updateCascadingFilters();
+    applyTableColumnFilters(); // Call the main filter function
+  });
+
+
+  // Replace expiryDateTime in MATCH_REQUEST and add ENABLED column
+  const todayPlus30 = new Date();
+  todayPlus30.setDate(todayPlus30.getDate() + 30);
+  const isoDate = todayPlus30.toISOString().split('.')[0];
+
+  filteredSheetData.forEach(row => { // Use filteredSheetData here
+    if (row['MATCH_REQUEST'] && typeof row['MATCH_REQUEST'] === 'string') {
+      row['MATCH_REQUEST'] = row['MATCH_REQUEST'].replace(
+        /"expiryDateTime"\s*:\s*"[^"]*"/g,
+        `"expiryDateTime": "${isoDate}"`
+      );
+    }
+
+    // Add ENABLED column after MATCH_REQUEST
+    if ('MATCH_REQUEST' in row) {
+      const newRow = {};
+      for (const [key, value] of Object.entries(row)) {
+        newRow[key] = value;
+        if (key === 'MATCH_REQUEST') {
+          newRow['ENABLED'] = '';
+        }
+      }
+      Object.assign(row, newRow);
+    } else {
+      row['ENABLED'] = '';
+    }
+
+    // Clean SERVICE field
+    let originalService = row['SERVICE'];
+    if (originalService) {
+      const baseService = originalService.replace(/(_\d+)+$/, '');
+      row['SERVICE'] = `${baseService}`;
+    }
+  });
+
+  const sorted = customSortFlowAndPartner(filteredSheetData);
+  showTable(sorted);
+}
+
+
+function renderColumnSelector(headers) {
+  const container = $('#columnSelectorList');
+  container.find('div:not(.selection-controls)').remove(); // Clear previous
+
+  const deselectedColumns = ['MATCH_REQUEST', 'MATCH_LOGTIME', 'MATCH_TRANSACTIONID'];
+
+  headers.forEach(header => {
+    const checkedAttr = deselectedColumns.includes(header) ? '' : 'checked';
+
+    const checkbox = $(`
+      <div>
+        <input type="checkbox" class="col-toggle" id="col_${header}" data-col="${header}" ${checkedAttr} />
+        <label for='col_${header}'>${header}</label>
+      </div>
+    `);
+    container.append(checkbox);
+  });
+
+  $('.col-toggle').off('change').on('change', function () {
+    const col = $(this).data('col');
+    const colIndex = fullHeaders.indexOf(col);
+
+    const table = document.getElementById('dataTable');
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(row => {
+      const cells = row.children;
+      if (cells[colIndex]) {
+        cells[colIndex].style.display = this.checked ? '' : 'none';
+      }
+    });
+
+    if (col === 'MATCH_REQUEST') {
+      const scrollArea = $('#scrollArea');
+      if (this.checked) {
+        scrollArea.removeClass('hide-match-request');
+      } else {
+        scrollArea.addClass('hide-match-request');
+      }
+    }
+  });
+
+  // Always hide MATCH_REQUEST initially
+  $('#scrollArea').addClass('hide-match-request');
+}
+
+
+
+// Functions for column selector dropdown
+function toggleColumnDropdown() {
+  const list = $('#columnSelectorList');
+  if (list.is(':visible')) {
+    list.hide();
+  } else {
+    // Hide other dropdowns if any
+    $('.checkbox-list').hide(); 
+    list.show();
+    // Focus on search input when opened
+    list.find('input[type="search"]').focus();
+  }
+}
+
+function selectAllColumns() {
+  $('#columnSelectorList input[type="checkbox"]:visible').prop('checked', true).trigger('change');
+}
+
+function clearAllColumns() {
+  $('#columnSelectorList input[type="checkbox"]:visible').prop('checked', false).trigger('change');
+}
+
+function filterColumnCheckboxes(term) {
+  $('#columnSelectorList div:not(.selection-controls)').each(function () {
+    const label = $(this).text().toLowerCase();
+    $(this).toggle(label.includes(term.toLowerCase()));
+  });
+}
+
+
+    function generateForm(data) {
+      $('#formContainer').empty();
+      
+      for (let col in data) {
+        const values = Array.isArray(data[col]) ? data[col] : [];
+        
+        if (values.length === 0) continue;
+        
+        const checkboxes = values.map(v => 
+          `<div>
+            <input type='checkbox' name='${col}' value='${v}' class='filter-check' data-column='${col}' id='${col}_${v}' />
+            <label for='${col}_${v}'>${v}</label>
+          </div>`
+        ).join('');
+        
+        const section = $(`
+  <div class="dropdown-section">
+    <label for='${col}'>${col}<span class="selected-count" id="count-${col}"> (0/${values.length} selected)</span></label>
+    <div class="search-input-container">
+      <input type="search" placeholder="Select ${col}..." readonly onclick="toggleCheckboxList('${col}')" />
+    </div>
+    <div class="checkbox-list" id="list-${col}">
+      <div class="selection-controls">
+        <button type="button" onclick="selectAll('${col}')">Select All</button>
+        <button type="button" onclick="selectNone('${col}')">Clear All</button>
+        <input type="search" placeholder="Search..." onkeyup="filterCheckboxes('${col}', this.value)" onclick="event.stopPropagation()" />
+      </div>
+      ${checkboxes}
+    </div>
+  </div>
+`);
+        $('#formContainer').append(section);
+      }
+      
+      $('.filter-check').off('change').on('change', debounce(function() {
+        updateSelectedCount($(this).data('column'));
+        applyTableColumnFilters(); // Call the consolidated filter function
+      }, 300));
+      // Inside generateForm(data) after the for-loop that creates filters
+// Append Select Columns dropdown first
+$('#formContainer').append(`
+  <div class="dropdown-section" style="min-width: 250px;">
+    <label for="columnSelector"><strong>Select Columns</strong></label>
+    <div class="search-input-container">
+      <input type="search" id="columnSelectorInput" placeholder="Select columns..." readonly onclick="toggleColumnDropdown()" />
+    </div>
+    <div class="checkbox-list" id="columnSelectorList">
+      <div class="selection-controls">
+        <button type="button" onclick="selectAllColumns()">Select All</button>
+        <button type="button" onclick="clearAllColumns()">Clear All</button>
+        <input type="search" placeholder="Search..." onkeyup="filterColumnCheckboxes(this.value)" onclick="event.stopPropagation()" />
+      </div>
+    </div>
+  </div>
+`);
+
+// Now render the checkboxes inside it
+renderColumnSelector(fullHeaders);
+
+
+      // Initialize counts
+      Object.keys(data).forEach(col => updateSelectedCount(col));
+    }
+
+    function updateSelectedCount(col) {
+      const total = $(`input[name='${col}']`).length;
+      const selected = $(`input[name='${col}']:checked`).length;
+      $(`#count-${col}`).text(`(${selected}/${total} selected)`);
+      
+      // Update search input placeholder
+      const searchInput = $(`#list-${col}`).siblings('.search-input-container').find('input[type="search"]');
+      if (selected === 0) {
+        searchInput.attr('placeholder', `Select ${col}...`);
+      } else if (selected === 1) {
+        const selectedValue = $(`input[name='${col}']:checked`).first().val();
+        searchInput.attr('placeholder', `${selectedValue} (+${selected-1} more)`);
+      } else {
+        const firstSelected = $(`input[name='${col}']:checked`).first().val();
+        searchInput.attr('placeholder', `${firstSelected} (+${selected-1} more)`);
+      }
+    }
+
+    function selectAll(col) {
+      $(`#list-${col} input[type="checkbox"]:visible`).prop('checked', true);
+      updateSelectedCount(col);
+      updateCascadingFilters();
+      applyTableColumnFilters(); // Call the consolidated filter function
+    }
+
+    function selectNone(col) {
+      $(`input[name='${col}']`).prop('checked', false);
+      updateSelectedCount(col);
+      updateCascadingFilters();
+      applyTableColumnFilters(); // Call the consolidated filter function
+    }
+
+    function toggleCheckboxList(col) {
+      const list = $(`#list-${col}`);
+      if (list.is(':visible')) {
+        list.hide();
+      } else {
+        $('.checkbox-list').hide();
+        list.show();
+        // Focus on search input when opened
+        list.find('input[type="search"]').focus();
+      }
+    }
+
+    function updateCascadingFilters() {
+      const selectedFilters = {};
+      expectedColumns.forEach(col => {
+        const selected = $(`input[name='${col}']:checked`).map(function () { 
+          return String(this.value).trim().toUpperCase(); 
+        }).get();
+        if (selected.length > 0) {
+          selectedFilters[col] = selected;
+        }
+      });
+
+      if (Object.keys(selectedFilters).length === 0) {
+        expectedColumns.forEach(col => {
+          if (originalColumnData[col]) {
+            updateDropdownOptions(col, originalColumnData[col]);
+          }
+        });
+        return;
+      }
+
+      let cascadeFilteredData = [...currentSheetData];
+      
+      Object.keys(selectedFilters).forEach(col => {
+        cascadeFilteredData = cascadeFilteredData.filter(row => {
+          const rowValue = String(row[col] || '').trim().toUpperCase();
+          return selectedFilters[col].includes(rowValue);
+        });
+      });
+
+      expectedColumns.forEach(col => {
+        if (!originalColumnData[col]) return;
+        
+        const availableValues = [...new Set(cascadeFilteredData.map(row => {
+          const val = String(row[col] || '').trim();
+          return val === '' ? null : val.toUpperCase();
+        }).filter(v => v !== null))].sort();
+        
+        updateDropdownOptions(col, availableValues, selectedFilters[col] || []);
+      });
+    }
+
+    function updateDropdownOptions(col, availableValues, selectedValues = []) {
+      const container = $(`#list-${col}`);
+      const searchInput = container.find('.selection-controls input[type="search"]');
+      const searchTerm = searchInput.val() || '';
+      
+      // Clear existing options (except selection controls)
+      container.find('div:not(.selection-controls)').remove();
+      
+      // Add available options
+      availableValues.forEach(value => {
+        const isSelected = selectedValues.includes(value);
+        const checkbox = $(`
+          <div>
+            <input type='checkbox' name='${col}' value='${value}' class='filter-check' data-column='${col}' id='${col}_${value}' ${isSelected ? 'checked' : ''} />
+            <label for='${col}_${value}'>${value}</label>
+          </div>
+        `);
+        container.append(checkbox);
+      });
+      
+      // Update the label to show available count
+      const selectedCount = selectedValues.length;
+      $(`#count-${col}`).text(`(${selectedCount}/${availableValues.length} selected)`);
+      
+      // Apply search filter if there was one
+      if (searchTerm) {
+        filterCheckboxes(col, searchTerm);
+      }
+      
+      // Reattach event handlers
+      container.find('.filter-check').off('change').on('change', debounce(function() {
+        updateSelectedCount($(this).data('column'));
+        applyTableColumnFilters(); // Call the consolidated filter function
+      }, 300));
+    }
+
+    function filterCheckboxes(col, term) {
+      $(`#list-${col} div:not(.selection-controls)`).each(function () {
+        const label = $(this).text().toLowerCase();
+        $(this).toggle(label.includes(term.toLowerCase()));
+      });
+    }
+
+   // This function is now just a wrapper to trigger the main filtering logic
+   function applyFilters() {
+     // The logic for collecting dropdown filters and updating active tags
+     // has been moved into applyTableColumnFilters for consolidation.
+     // This function now simply triggers the full filtering process.
+     applyTableColumnFilters();
+   }
+
+// --- REWRITTEN CLEAR FILTERS FUNCTIONALITY START ---
+function resetAllFilters() {
+    console.log('Resetting all filters...');
+
+    // 1. Uncheck all filter checkboxes (main form)
+    $('.filter-check').prop('checked', false); 
+
+    // 2. Clear active filters display (main form)
+    $('#activeFilters').empty();
+
+    // 3. Reset dropdown options and selected counts for all expected columns (main form)
+    expectedColumns.forEach(col => {
+        if (originalColumnData[col]) {
+            updateDropdownOptions(col, originalColumnData[col]);
+            updateSelectedCount(col); 
+        }
+    });
+
+    // --- NEW: Clear header filter inputs (popup filters) ---
+    activeHeaderFilters = {}; // Clear the stored header filters
+    $('.filter-icon').removeClass('active'); // Remove active class from icons
+
+    // 4. Reset filtered data to the original sheet data
+    filteredSheetData = [...currentSheetData]; 
+
+    // 5. Reset pagination to the first page
+    currentPage = 1;
+
+    // 6. Destroy existing clusterize instance if it exists
+    if (clusterize) {
+        clusterize.destroy(true);
+        clusterize = null;
+    }
+
+    // 7. Sort the full data and display it
+    const sortedData = customSortFlowAndPartner(filteredSheetData); 
+    showTable(sortedData);
+
+    console.log('Filters reset successfully.');
+}
+
+// Modify the click handler to call the new reset function
+$('#clearFilters').click(function () {
+    resetAllFilters();
+});
+// --- REWRITTEN CLEAR FILTERS FUNCTIONALITY END ---
+
+
+let currentPage = 1;
+const rowsPerPage = 200;
+function paginateData(data) {
+  const start = (currentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  return data.slice(start, end);
+}
+  // ✅ Updated showTable() using Clusterize.js correctly
+function showTable(data) {
+  const paginatedData = paginateData(data);
+
+  // Update TEST_RUN_ID based on full data
+  data.forEach((row, index) => {
+    row['TEST_RUN_ID'] = index + 1;
+  });
+
+  $('#recordCount').text(`Records found: ${data.length}`);
+
+  // Build header row
+  const headerRow = '<tr>' + fullHeaders.map(h => {
+    const className = h === 'MATCH_REQUEST' ? 'match-request-header' : '';
+    const isActive = activeHeaderFilters[h] && activeHeaderFilters[h].length > 0 ? 'active' : '';
+    return `<th class="${className}">
+              ${h} <i class="fas fa-filter filter-icon ${isActive}" data-column="${h}"></i>
+            </th>`;
+  }).join('') + '</tr>';
+  $('#tableHead').html(headerRow);
+
+  // Re-attach click listener to filter icons
+  $('.filter-icon').off('click').on('click', function(e) {
+    e.stopPropagation(); 
+    const column = $(this).data('column');
+    openColumnFilterPopup(column, $(this));
+  });
+
+
+  // ❗ Use paginatedData here
+  const plainRows = paginatedData.map(row => {
+    const cells = fullHeaders.map(h => {
+      const cellClass =
+        h === 'MATCH_REQUEST' ? 'match-request-cell' :
+        h === 'TLO' ? 'tlo-cell' :
+        h === 'newTLO' ? 'newtlo-cell' : '';
+      return `<td class="${cellClass}">${row[h] || ''}</td>`;
+    }).join('');
+    return `<tr>${cells}</tr>`;
+  });
+
+  if (!clusterize) {
+    clusterize = new Clusterize({
+      rows: plainRows,
+      scrollId: 'scrollArea',
+      contentId: 'contentArea',
+      rows_in_block: 100,
+      blocks_in_cluster: 4,
+      show_no_data_row: false,
+      tag: 'tr',
+      callbacks: {
+        clusterChanged: function () {
+          applyColumnVisibility();
+        }
+      }
+    });
+  } else {
+    clusterize.update(plainRows);
+  }
+
+  applyColumnVisibility();
+}
+
+
+// Function to handle window resize (optional)
+$(window).resize(function() {
+  if (clusterize) {
+    clusterize.refresh();
+  }
+});
+
+
+
+   function exportFiltered(type) {
+  if (filteredSheetData.length === 0) {
+    alert('No data to export');
+    return;
+  }
+
+  const reorderedData = filteredSheetData.map(row => {
+    const reordered = { TEST_RUN_ID: row['TEST_RUN_ID'] };
+    fullHeaders.forEach(h => {
+      if (h !== 'TEST_RUN_ID') {
+        reordered[h] = row[h];
+      }
+    });
+    return reordered;
+  });
+
+  const ws = XLSX.utils.json_to_sheet(reorderedData);
+
+  reorderedData.forEach((row, idx) => {
+    if (row.IS_DUPLICATE) {
+      fullHeaders.forEach((h, colIdx) => {
+        const cellRef = XLSX.utils.encode_cell({ c: colIdx, r: idx + 1 });
+        if (!ws[cellRef]) return;
+        if (!ws[cellRef].s) ws[cellRef].s = {};
+        ws[cellRef].s.fill = {
+          patternType: "solid",
+          fgColor: { rgb: "FFFF00" }
+        };
+      });
+    }
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Filtered');
+  XLSX.writeFile(wb, `Filtered_Data.${type}`);
+}
+
+
+    $('#exportExcel').click(() => exportFiltered('xlsx'));
+    $('#exportCSV').click(() => exportFiltered('csv'));
+    $('#exportPDF').click(() => {
+      if (filteredSheetData.length === 0) {
+        alert('No data to export');
+        return;
+      }
+      const doc = new jspdf.jsPDF();
+      const data = filteredSheetData.map(row => fullHeaders.map(h => row[h] || ''));
+      doc.autoTable({ head: [fullHeaders], body: data });
+      doc.save('Filtered_Data.pdf');
+    });
+  
+    $('#applyCascadingFilters').click(function () {
+      updateCascadingFilters();
+      applyTableColumnFilters(); // Call the consolidated filter function
+    });
+
+ function chunkArray(array, chunkSize) {
+    const chunks = [];
+    for (let i = 0; i < array.length; i += chunkSize) {
+      chunks.push(array.slice(i, i + chunkSize));
+    }
+    return chunks;
+  }
+
+  // Triggered when data is filtered or loaded
+  function checkGenerateExcelsVisibility() {
+  const rowsPerFile = parseInt($('#rowsPerFile').val()) || 50;
+  if (filteredSheetData.length > rowsPerFile) {
+    $('#generateExcels').show();
+  } else {
+    $('#generateExcels').hide();
+    $('#chunkLinks').empty();
+  }
+}
+
+  // Call visibility check inside applyFilters and showTable
+  const originalShowTable = showTable;
+showTable = function(data) {
+  originalShowTable(data);
+  checkGenerateExcelsVisibility();
+  updatePageIndicator();
+
+  if (data.length > rowsPerPage) {
+    $('#paginationControls').show(); // ✅ Show pagination if needed
+  } else {
+    $('#paginationControls').hide(); // ❌ Hide if all fits in one page
+  }
+}
+
+
+  // Validate filename before any export
+  function validateFileName() {
+    const fileNamePrefix = $('#fileName').val().trim();
+    if (!fileNamePrefix) {
+      alert('Please enter a file name before downloading.');
+      return null;
+    }
+    return fileNamePrefix;
+  }
+
+  // Generate Excels in chunks
+  $('#generateExcels').click(async function () {
+  const fileNamePrefix = validateFileName();
+  if (!fileNamePrefix) return;
+
+  const rowsPerFile = parseInt($('#rowsPerFile').val()) || 50;
+  
+  if (rowsPerFile <= 0) {
+    alert('Please enter a valid number of rows per file (minimum 1).');
+    return;
+  }
+
+  const chunks = chunkArray(filteredSheetData, rowsPerFile);
+
+  $('#chunkLinks').empty();
+  $('#zipLoading').show();
+
+  const zip = new JSZip();
+
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    const from = i * rowsPerFile + 1;
+    const to = from + chunk.length - 1;
+const reorderedChunk = chunk.map(row => {
+  const reordered = { TEST_RUN_ID: row['TEST_RUN_ID'] };
+  fullHeaders.forEach(h => {
+    if (h !== 'TEST_RUN_ID') {
+      reordered[h] = row[h];
+    }
+  });
+  return reordered;
+});
+const sheet = XLSX.utils.json_to_sheet(reorderedChunk);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, sheet, 'Chunk');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const fileName = `${fileNamePrefix}_Row_${from}_to_${to}.xlsx`;
+    zip.file(fileName, blob);
+
+    const url = URL.createObjectURL(blob);
+    const link = $(`
+      <div class="chunk-link">
+        <i class="fa fa-download"></i>
+        <a href="${url}" download="${fileName}">${fileName}</a>
+        <span>(${chunk.length} rows)</span>
+      </div>
+    `);
+    $('#chunkLinks').append(link);
+  }
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const zipUrl = URL.createObjectURL(zipBlob);
+
+  const zipDownloadLink = $(`
+    <div style='margin-top:10px;'>
+      <a class='btn' href='${zipUrl}' download='${fileNamePrefix}_All Files.zip'>Download All as ZIP</a>
+    </div>
+  `);
+  $('#chunkLinks').append(zipDownloadLink);
+  $('#zipLoading').hide();
+});
+
+// Add input validation and real-time update
+$('#rowsPerFile').on('input', function() {
+  const value = parseInt($(this).val());
+  if (value && value > 0) {
+    checkGenerateExcelsVisibility();
+  }
+});
+
+  // Apply same validation to standard Excel download
+$('#exportExcel').off('click').on('click', () => {
+  const fileNamePrefix = $('#fileName').val().trim();
+  if (!fileNamePrefix) {
+    alert('Please enter a file name before downloading.');
+    return;
+  }
+
+  if (!filteredSheetData || filteredSheetData.length === 0) {
+    alert('No data to export');
+    return;
+  }
+
+  // Group by Partner Name
+  const partnerGroups = {};
+  filteredSheetData.forEach(row => {
+    const partner = (row.PARTNER_NAME || 'Unknown')
+      .toString()
+      .replace(/[\\/:*?"<>|]/g, '_');
+    if (!partnerGroups[partner]) partnerGroups[partner] = [];
+    partnerGroups[partner].push(row);
+  });
+
+  // Create one workbook with multiple sheets
+  const wb = XLSX.utils.book_new();
+
+  Object.keys(partnerGroups).forEach(partner => {
+    const rows = partnerGroups[partner].map((row, idx) => {
+      const reordered = { TEST_RUN_ID: idx + 1 }; // Restart numbering
+      fullHeaders.forEach(h => {
+        if (h === 'ENABLED') {
+          reordered[h] = 'No'; // ✅ Set ENABLED to "No"
+        } else if (h !== 'TEST_RUN_ID') {
+          reordered[h] = row[h];
+        }
+      });
+      return reordered;
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, partner.substring(0, 31));
+  });
+
+  XLSX.writeFile(wb, `${fileNamePrefix}.xlsx`);
+});
+
+
+
+function getTableDataFromDOM() {
+  const rows = [];
+  $('#dataTable tbody tr').each(function () {
+    const row = {};
+    $(this).find('td').each(function (index) {
+      const header = fullHeaders[index];
+      row[header] = $(this).text().trim();
+    });
+    rows.push(row);
+  });
+  return rows;
+}
+
+
+$('#exportTCButton').click(() => {
+  const fileNamePrefix = $('#fileName').val().trim();
+  if (!fileNamePrefix) {
+    alert("Please enter a file name before downloading.");
+    return;
+  }
+
+  const exportData = filteredSheetData.map(row => {
+    const matchText = row['MATCH_REQUEST'];
+    const flowName = row['FLOW']?.trim() || '';
+    let sentence = '';
+
+    try {
+      const obj = typeof matchText === 'string' ? JSON.parse(matchText) : matchText;
+      const jsonData = obj.JSON || {};
+      const baseProductId = jsonData.baseProduct?.baseProductId || '';
+      let rawProduct = jsonData.baseProduct?.product ?? jsonData.product;
+      let productArray = [];
+
+      if (rawProduct) {
+        productArray = Array.isArray(rawProduct) ? rawProduct : [rawProduct];
+      }
+
+      const sloList = productArray.map(p => {
+        const pid = p.ProductID || p.ProductId;
+        const act = p.action;
+        if (pid && act) return `${act}:${pid}`;
+        if (pid) return pid;
+        return '';
+      }).filter(Boolean).join(', ');
+
+      if (flowName && baseProductId && sloList) {
+        sentence = `${flowName} subscriber with ${baseProductId} TLO and ${sloList} SLO's`;
+      } else if (flowName && baseProductId) {
+        sentence = `${flowName} subscriber with ${baseProductId} TLO`;
+      } else if (flowName && sloList) {
+        sentence = `${flowName} subscriber with ${sloList} SLO's`;
+      } else if (flowName) {
+        sentence = `${flowName} subscriber`;
+      }
+    } catch (e) {
+      // Fall through
+    }
+
+    return { MATCH_REQUEST: sentence || matchText };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'TC Export');
+  XLSX.writeFile(wb, `${fileNamePrefix}_TCs.xlsx`);
+});
+
+
+
+$(document).on('click', '#duplicateRowsBtn', function () {
+  if (!currentSheetData.length) {
+    alert("No data loaded.");
+    return;
+  }
+
+  const groupedByPartner = {};
+
+  currentSheetData.forEach(row => {
+    const partner = row.PARTNERID;
+    if (!groupedByPartner[partner]) {
+      groupedByPartner[partner] = {
+        ACTIVATE: [],
+        //DEACTIVATE: [],
+        REACTIVATE: []
+      };
+    }
+    const flow = (row.FLOW || '').toUpperCase();
+    if (groupedByPartner[partner][flow]) {
+      groupedByPartner[partner][flow].push(row);
+    }
+  });
+
+  let dupRows = [];
+
+  Object.entries(groupedByPartner).forEach(([partner, flows]) => {
+    const reactivateCount = flows.REACTIVATE.length;
+    const activateCount = flows.ACTIVATE.length;
+    //const deactivateCount = flows.DEACTIVATE.length;
+
+    const targetActivate = Math.max(0, reactivateCount - activateCount + 5);
+    //const targetDeactivate = Math.max(0, reactivateCount - deactivateCount + 5);
+
+    const generateDup = (sourceArr, count, flowName) => {
+      for (let i = 0; i < count; i++) {
+        const original = sourceArr[i % sourceArr.length];
+        const clone = structuredClone(original);
+        clone['SERVICE'] = `Dup${original['SERVICE'] || flowName}_${i + 1}`;
+        clone['IS_DUPLICATE'] = true;
+        dupRows.push(clone);
+      }
+    };
+
+    if (flows.ACTIVATE.length > 0 && targetActivate > 0) {
+      generateDup(flows.ACTIVATE, targetActivate, 'Activate');
+    }
+
+    //if (flows.DEACTIVATE.length > 0 && targetDeactivate > 0) {
+    //  generateDup(flows.DEACTIVATE, targetDeactivate, 'Deactivate');
+    //}
+  });
+
+  currentSheetData = [...currentSheetData, ...dupRows];
+  filteredSheetData = [...filteredSheetData, ...dupRows];
+  applyTableColumnFilters(); // Call the consolidated filter function
+
+  alert(`Added ${dupRows.length} duplicate rows (adjusted per partner to match REACTIVATE + 5).`);
+});
+$('#toggleMatchRequest').change(function () {
+  const scrollArea = $('#scrollArea');
+  if (this.checked) {
+    scrollArea.removeClass('hide-match-request');
+  } else {
+    scrollArea.addClass('hide-match-request');
+  }
+});
+
+// Hide match request column on load
+$('#scrollArea').addClass('hide-match-request');
+
+function applyColumnVisibility() {
+  $('#columnSelectorList input[type="checkbox"]').each(function () {
+    const col = $(this).data('col');
+    const colIndex = fullHeaders.indexOf(col);
+    const isVisible = $(this).is(':checked');
+
+    const table = document.getElementById('dataTable');
+    const rows = table.querySelectorAll('tr');
+
+    rows.forEach(row => {
+      const cells = row.children;
+      if (cells[colIndex]) {
+        cells[colIndex].style.display = isVisible ? '' : 'none';
+      }
+    });
+
+    // Special class toggle for MATCH_REQUEST (if needed)
+    if (col === 'MATCH_REQUEST') {
+      const scrollArea = $('#scrollArea');
+      if (isVisible) {
+        scrollArea.removeClass('hide-match-request');
+      } else {
+        scrollArea.addClass('hide-match-request');
+      }
+    }
+  });
+}
+function customSortFlowAndPartner(data) {
+  const flowOrder = ['ACTIVATE', 'DEACTIVATE', 'REACTIVATE', 'UPDATEMISCSUBSCRIBERDETAILS'];
+
+  return data.sort((a, b) => {
+    // ✅ Move duplicates to bottom
+    const isDupA = !!a.IS_DUPLICATE;
+    const isDupB = !!b.IS_DUPLICATE;
+    if (isDupA !== isDupB) return isDupA ? 1 : -1;
+
+    // ✅ Group by PARTNERID first
+    const partnerA = (a.PARTNERID || '').toString();
+    const partnerB = (b.PARTNERID || '').toString();
+    const partnerCompare = partnerA.localeCompare(partnerB, undefined, { numeric: true });
+    if (partnerCompare !== 0) return partnerCompare;
+
+    // ✅ Then by FLOW
+    const flowA = (a.FLOW || '').toUpperCase();
+    const flowB = (b.FLOW || '').toUpperCase();
+    const flowIndexA = flowOrder.indexOf(flowA);
+    const flowIndexB = flowOrder.indexOf(flowB);
+    return flowIndexA - flowIndexB;
+  });
+}
+$('#dashboardButton').click(function() {
+  const data = filteredSheetData.length ? filteredSheetData : currentSheetData;
+  if (!data.length) {
+    alert("No data loaded.");
+    return;
+  }
+
+  // Get ALL unique flows and partners from the data, trimming and uppercasing for consistency
+  const flowTypes = [...new Set(data.map(row => (row.FLOW || '').toUpperCase().trim()))].filter(Boolean).sort();
+  const partners = [...new Set(data.map(row => (row.PARTNER_NAME || '').toUpperCase().trim()))].filter(Boolean).sort();
+
+  // Debug logs
+  console.log("Detected flows:", flowTypes);
+  console.log("Detected partners:", partners);
+
+  // Prepare table data (flows as rows, partners as columns)
+  const tableData = {};
+  flowTypes.forEach(flow => {
+    tableData[flow] = {};
+    partners.forEach(partner => {
+      tableData[flow][partner] = 0;
+    });
+  });
+
+  data.forEach(row => {
+    const partner = (row.PARTNER_NAME || '').toUpperCase().trim();
+    const flow = (row.FLOW || '').toUpperCase().trim();
+    if (partner && flow && tableData[flow] && tableData[flow][partner] !== undefined) {
+      tableData[flow][partner]++;
+    }
+  });
+
+  // Build table: flows as rows, partners as columns
+  const tbody = $('#dashboardTable tbody');
+  const thead = $('#dashboardTable thead');
+  tbody.empty();
+  thead.html(`
+    <tr>
+      <th style="border:1px solid #ccc; padding:6px;">FLOW</th>
+      ${partners.map(p => `<th style="border:1px solid #ccc; padding:6px;">${p}</th>`).join('')}
+      <th style="border:1px solid #ccc; padding:6px;">Total</th>
+    </tr>
+  `);
+
+  const rowTotals = [];
+
+  flowTypes.forEach(flow => {
+    let rowTotal = 0;
+    const cells = partners.map((partner, i) => {
+      const val = tableData[flow][partner];
+      rowTotal += val;
+      return `<td style="border:1px solid #ccc; padding:6px;">${val}</td>`;
+    });
+    rowTotals.push(rowTotal);
+    tbody.append(`<tr><td style="border:1px solid #ccc; padding:6px;">${flow}</td>${cells.join('')}<td style="border:1px solid #ccc; padding:6px; font-weight:bold;">${rowTotal}</td></tr>`);
+  });
+
+  // Column totals
+  const colTotals = partners.map((partner, i) => {
+    let total = 0;
+    flowTypes.forEach(flow => {
+      total += tableData[flow][partner];
+    });
+    return total;
+  });
+
+  const totalRow = `
+    <tr style="font-weight:bold; background:#f0f0f0;">
+      <td style="border:1px solid #ccc; padding:6px;">Total</td>
+      ${colTotals.map(t => `<td style="border:1px solid #ccc; padding:6px;">${t}</td>`).join('')}
+      <td style="border:1px solid #ccc; padding:6px;">${rowTotals.reduce((a,b)=>a+b,0)}</td>
+    </tr>
+  `;
+  tbody.append(totalRow);
+
+  $('#dashboardModal').show();
+});
+
+function updatePageIndicator() {
+  const totalPages = Math.ceil(filteredSheetData.length / rowsPerPage);
+  $('#pageNumber').text(`Page ${currentPage} of ${totalPages}`);
+  $('#prevPage').prop('disabled', currentPage === 1);
+  $('#nextPage').prop('disabled', currentPage === totalPages);
+}
+
+$('#prevPage').click(() => {
+  if (currentPage > 1) {
+    currentPage--;
+    showTable(filteredSheetData);
+    updatePageIndicator();
+  }
+});
+
+$('#nextPage').click(() => {
+  const maxPages = Math.ceil(filteredSheetData.length / rowsPerPage);
+  if (currentPage < maxPages) {
+    currentPage++;
+    showTable(filteredSheetData);
+    updatePageIndicator();
+  }
+});
+
+$(document).on('click', '#exportDashboardExcel', function() {
+  // Get table headers
+  const headers = [];
+  $('#dashboardTable thead th').each(function() {
+    headers.push($(this).text().trim());
+  });
+
+  // Get table rows
+  const rows = [];
+  $('#dashboardTable tbody tr').each(function() {
+    const row = [];
+    $(this).find('td').each(function() {
+      row.push($(this).text().trim());
+    });
+    rows.push(row);
+  });
+
+  // Prepare data for XLSX
+  const ws_data = [headers, ...rows];
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Dashboard');
+
+  // Download
+  XLSX.writeFile(wb, 'Dashboard.xlsx');
+});
+
+$('#partnerTCsBtn').click(async function () {
+  if (!filteredSheetData.length) {
+    alert('No data to export');
+    return;
+  }
+
+  // Group by Partner → Flow
+  const partnerFlowGroups = {};
+  filteredSheetData.forEach(row => {
+    const partner = (row.PARTNER_NAME || 'Unknown')
+      .toString()
+      .replace(/[\\/:*?"<>|]/g, '_');
+    const flow = (row.FLOW || 'Unknown')
+      .toString()
+      .replace(/[\\/:*?"<>|]/g, '_');
+
+    if (!partnerFlowGroups[partner]) partnerFlowGroups[partner] = {};
+    if (!partnerFlowGroups[partner][flow]) partnerFlowGroups[partner][flow] = [];
+    partnerFlowGroups[partner][flow].push(row);
+  });
+
+  $('#chunkLinks').empty();
+  $('#zipLoading').show();
+  const zip = new JSZip();
+
+  for (const partner in partnerFlowGroups) {
+    const wb = XLSX.utils.book_new();
+
+    // Separate non-dups and dups
+    const nonDupFlows = {};
+    const dupFlows = {};
+    for (const flow in partnerFlowGroups[partner]) {
+      const nonDupRows = partnerFlowGroups[partner][flow].filter(r => !r.IS_DUPLICATE);
+      const dupRows = partnerFlowGroups[partner][flow].filter(r => r.IS_DUPLICATE);
+      if (nonDupRows.length) nonDupFlows[flow] = nonDupRows;
+      if (dupRows.length) dupFlows[flow] = dupRows;
+    }
+
+    // Assign IDs - non-dups first
+    let runIdCounter = 1;
+    for (const flow in nonDupFlows) {
+      const rows = nonDupFlows[flow].map(row => {
+        const reordered = { TEST_RUN_ID: runIdCounter++ };
+        fullHeaders.forEach(h => {
+          if (h === 'ENABLED') reordered[h] = 'No';
+          else if (h !== 'TEST_RUN_ID') reordered[h] = row[h];
+        });
+        return reordered;
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), flow.substring(0, 31));
+    }
+
+    // Then dups
+    for (const flow in dupFlows) {
+      const rows = dupFlows[flow].map(row => {
+        const reordered = { TEST_RUN_ID: runIdCounter++ };
+        fullHeaders.forEach(h => {
+          if (h === 'ENABLED') reordered[h] = 'No';
+          else if (h !== 'TEST_RUN_ID') reordered[h] = row[h];
+        });
+        return reordered;
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), `${flow}_DUP`.substring(0, 31));
+    }
+
+    // Create individual file
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const fileName = `${partner}.xlsx`;
+
+    // Add to ZIP
+    zip.file(fileName, blob);
+
+    // ✅ Add individual download link
+    const url = URL.createObjectURL(blob);
+    const link = $(`
+      <div class="chunk-link">
+        <i class="fa fa-download"></i>
+        <a href="${url}" download="${fileName}">${fileName}</a>
+        <span>(${Object.keys(partnerFlowGroups[partner]).length} flows)</span>
+      </div>
+    `);
+    $('#chunkLinks').append(link);
+  }
+
+  // Create ZIP link
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const zipUrl = URL.createObjectURL(zipBlob);
+  $('#chunkLinks').append(`
+    <div style='margin-top:10px;'>
+      <a class='btn' href='${zipUrl}' download='PartnerTCs.zip'>Download All as ZIP</a>
+    </div>
+  `);
+
+  $('#zipLoading').hide();
+});
+
+
+
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DS Data Management Tool</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/css/select2.min.css" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+<style>
+        :root {
+            --primary-color: #007BFF;
+            --hover-primary-color: #0056b3;
+            --secondary-color: #45a049;
+            --text-color: #333;
+            --border-color: #ddd;
+            --border-radius: 8px;
+            --spacing-sm: 8px;
+            --spacing-md: 15px;
+            --spacing-lg: 20px;
+            --spacing-xl: 25px;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            line-height: 1.5;
+            height: 100vh;
+            background-color: #f9f9f9;
+            overflow-x: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            margin: 2rem auto;
+            background-color: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: var(--spacing-lg);
+            color: var(--text-color);
+        }
+
+        /* Tab System Styles */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: 0;
+            background-color: white;
+            padding: var(--spacing-sm) var(--spacing-sm) 0;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            width: 90%;
+            max-width: 1400px;
+            margin: 1rem auto 0;
+        }
+
+        .tab {
+            padding: var(--spacing-md) var(--spacing-lg);
+            cursor: pointer;
+            background: #7CB9E8;
+            border: none;
+            margin-right: var(--spacing-sm);
+            border-radius: 5px 5px 0 0;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Common Button Styles */
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: var(--spacing-md);
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--hover-primary-color);
+        }
+
+        /* Common Input Styles */
+        input[type="text"], 
+        input[type="file"],
+        textarea,
+        select {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+
+        /* DS Data Tab Styles */
+        #ds-data input[type="text"] {
+            width: 100%;
+            margin-bottom: var(--spacing-md);
+            box-sizing: border-box;
+        }
+
+        #ds-data .input-group {
+            display: flex;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        #ds-data .input-container {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        #ds-data .input-label {
+            font-weight: bold;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-color);
+        }
+
+        #ds-data textarea {
+            width: 100%;
+            height: 200px;
+            padding: var(--spacing-md);
+            margin: var(--spacing-sm) 0;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: monospace;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        #ds-data .button-group {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        #ds-data .output-container {
+            display: flex;
+            gap: var(--spacing-lg);
+        }
+
+        #ds-data .output-column {
+            flex: 1;
+            background: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #ds-data .output-column:nth-child(1) {
+            flex: 3;  /* Increased from 2 to 3 for wider title column */
+            min-width: 600px;  /* Increased from 500px to 600px */
+        }
+
+        #ds-data .output-column:nth-child(2) {
+            flex: 2;
+            min-width: 350px;
+        }
+
+        #ds-data .output-column:nth-child(3) {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        #ds-data .column-title {
+            font-weight: bold;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-color);
+            font-size: 16px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        #ds-data .column-content {
+            white-space: pre-line;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: var(--spacing-md) 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Dataset Preparation Tab Styles */
+        #dataset-preparation .top-row, 
+        #dataset-preparation .dropdown-row {
+            display: flex;
+         align-items: flex-end; /* Align inputs and buttons along the bottom */
+         gap: 16px; /* Space between items */
+         flex-wrap: wrap; /* Optional: allows wrapping on smaller screens */
+         margin-bottom: 20px;
+        }
+		
+
+        #dataset-preparation .top-row {
+            margin-top: var(--spacing-lg);
+        }
+
+        #dataset-preparation input[type="file"] {
+            height: 30px;
+            padding: 5px;
+            border: 1px solid #aaa;
+            border-radius: 4px;
+            background-color: white;
+        }
+
+        #dataset-preparation input[type="file"]::-webkit-file-upload-button {
+            height: 30px;
+            padding: 0 var(--spacing-md);
+            border: none;
+            border-radius: 4px;
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            margin-right: var(--spacing-md);
+        }
+
+        #dataset-preparation input[type="file"]::-webkit-file-upload-button:hover {
+            background-color: var(--hover-primary-color);
+        }
+
+        #dataset-preparation input[type="text"] {
+            height: 30px;
+            min-width: 150px;
+            flex-grow: 1;
+        }
+
+        #dataset-preparation .dropdown-container {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        #dataset-preparation label {
+            font-weight: 600;
+            color: #444;
+            margin-top: var(--spacing-sm);
+            text-align: center;
+        }
+
+        #dataset-preparation #tloWpsDropdown {
+            min-width: 400px;
+        }
+		#dataset-preparation .dropdown-container select#tloWpsDropdown {
+    min-width: 250px;
+}
+
+
+        #dataset-preparation .dropdown {
+            width: 150px;
+        }
+
+        #dataset-preparation .slo-dropdown {
+            width: 150px;
+        }
+
+        #dataset-preparation .apply-button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #dataset-preparation .apply-label {
+            color: white;
+            font-weight: bold;
+            margin-top: var(--spacing-sm);
+        }
+
+#dataset-preparation .table-container {
+  margin: 0 var(--spacing-lg);
+  width: calc(100% - 2 * var(--spacing-lg));
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: #ffffff;
+  position: relative;
+}
+
+
+        #dataset-preparation table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #dataset-preparation th {
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            padding: var(--spacing-sm) var(--spacing-md);
+            text-align: left;
+        }
+
+        /* Setting width for title column in the table */
+        #dataset-preparation th:nth-child(3) {
+            min-width: 300px; /* Title column width */
+        }
+
+        #dataset-preparation td {
+            padding: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Setting width for title column cells */
+        #dataset-preparation td:nth-child(3) {
+            min-width: 300px;
+        }
+
+        #dataset-preparation tr:nth-child(odd) td {
+            background-color: #f1f1f1;
+        }
+
+        #dataset-preparation tr:nth-child(even) td {
+            background-color: #ffffff;
+        }
+
+        #dataset-preparation tr:hover td {
+            background-color: #e0e0e0;
+        }
+
+        #dataset-preparation #selectAll, 
+        #dataset-preparation #dataTable input[type="checkbox"] {
+            transform: scale(1.5);
+            margin-right: var(--spacing-md);
+            cursor: pointer;
+        }
+
+        #dataset-preparation .select2-container {
+            min-width: 150px !important;
+        }
+
+        #dataset-preparation .select2-container--default .select2-selection--single {
+            border-radius: 4px;
+            height: 40px;
+            padding: 5px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            #ds-data .output-container {
+                flex-direction: column;
+            }
+            
+            #ds-data .output-column {
+                min-width: auto !important;
+            }
+            
+            #dataset-preparation .dropdown-row {
+                justify-content: flex-start;
+            }
+        }
+		#dataset-preparation .table-container {
+  position: relative;  /* Required for dropdownParent */
+}
+
+    </style>
+</head>
+<body>
+<div class="tabs">
+<button class="tab active" onclick="switchTab('ds-data')">DS Data</button>
+<button class="tab" onclick="switchTab('dataset-preparation')">Dataset Preparation</button>
+</div>
+<!-- DS Data Tab Content -->
+<div class="tab-content active" id="ds-data">
+<div class="container">
+<h1>JSON to Excel Converter</h1>
+<input id="partnerName" placeholder="Enter Partner Name..." type="text"/>
+<div class="input-group">
+<div class="input-container">
+<div class="input-label">Titles Data</div>
+<textarea id="columnAInput" placeholder="Paste Titles Here"></textarea>
+</div>
+<div class="input-container">
+<div class="input-label">JSON Data</div>
+<textarea id="jsonInput" placeholder="Paste JSON data here..."></textarea>
+</div>
+</div>
+<div class="button-group">
+<button onclick="processData()">Process Data</button>
+<button onclick="downloadExcel()">Download Excel</button>
+</div>
+<div class="output-container">
+<div class="output-column">
+<div class="column-title">Title</div>
+<div class="column-content" id="columnA"></div>
+</div>
+<div class="output-column">
+<div class="column-title">TLO_WPS</div>
+<div class="column-content" id="columnC"></div>
+</div>
+<div class="output-column">
+<div class="column-title">SLO's</div>
+<div class="column-content" id="columnD"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Dataset Preparation Tab Content -->
+<div class="tab-content" id="dataset-preparation">
+<div class="container">
+<div id="loadingIndicator" style="display:none; font-weight:bold; color: #007BFF; margin-top: 10px;">
+  <i class="fas fa-spinner fa-spin"></i> Processing file...
+</div>
+
+<div class="top-row">
+<div class="form-group">
+  <label for="excelFileInput">Upload file:</label><br />
+<input accept=".xlsx, .xls" id="excelFileInput" type="file"/>
+</div>
+<button id="uploadButton">Process Data</button>
+<div class="form-group">
+  <label for="fileName">File Name:</label><br />
+  <input id="fileName" placeholder="Enter file name" type="text" style="width: 500px;" />
+</div>
+<div class="form-group">
+  <label for="tdmPartner">Sheet Name</label><br />
+<input id="tdmPartner" placeholder="Example: 117_Ultra" type="text"/ style="width: 500px;" >
+</div>
+<button id="downloadButton">Generate DataSet</button>
+</div>
+<div class="dropdown-row">
+<div class="dropdown-container">
+<select class="dropdown" id="tloWpsDropdown"></select>
+<label for="tloWpsDropdown">TLO_WPS</label>
+</div>
+<div class="dropdown-container">
+<select class="dropdown slo-dropdown" id="slo1Dropdown"></select>
+<label for="slo1Dropdown">SLO1</label>
+</div>
+<div class="dropdown-container">
+<select class="dropdown slo-dropdown" id="slo2Dropdown"></select>
+<label for="slo2Dropdown">SLO2</label>
+</div>
+<div class="dropdown-container">
+<select class="dropdown slo-dropdown" id="slo3Dropdown"></select>
+<label for="slo3Dropdown">SLO3</label>
+</div>
+<div class="dropdown-container">
+<select class="dropdown slo-dropdown" id="slo4Dropdown"></select>
+<label for="slo4Dropdown">SLO4</label>
+</div>
+<div class="dropdown-container">
+<select class="dropdown slo-dropdown" id="slo5Dropdown"></select>
+<label for="slo5Dropdown">SLO5</label>
+</div>
+<div class="dropdown-container">
+<select class="dropdown slo-dropdown" id="slo6Dropdown"></select>
+<label for="slo6Dropdown">SLO6</label>
+</div>
+<div class="dropdown-container">
+<select class="dropdown slo-dropdown" id="slo7Dropdown"></select>
+<label for="slo7Dropdown">SLO7</label>
+</div>
+<div class="dropdown-container">
+<select class="dropdown slo-dropdown" id="slo8Dropdown"></select>
+<label for="slo8Dropdown">SLO8</label>
+</div>
+<div class="apply-button-container">
+<button aria-label="Apply the selected options" id="ApplyButton">Apply</button>
+<label class="apply-label" for="ApplyButton">Apply</label>
+</div>
+</div>
+<div class="table-container">
+<table id="dataTable">
+<thead>
+<tr>
+<th><input id="selectAll" type="checkbox"/></th>
+<th>S.No</th>
+<th>Title</th>
+<th>Scenario</th>
+<th>TLO_WPS</th>
+<th>TLO_WPS2</th>
+<th><input type="checkbox" class="slo-header-checkbox" data-slo-index="6" /> SLO1</th>
+<th><input type="checkbox" class="slo-header-checkbox" data-slo-index="7" /> SLO2</th>
+<th><input type="checkbox" class="slo-header-checkbox" data-slo-index="8" /> SLO3</th>
+<th><input type="checkbox" class="slo-header-checkbox" data-slo-index="9" /> SLO4</th>
+<th><input type="checkbox" class="slo-header-checkbox" data-slo-index="10" /> SLO5</th>
+<th><input type="checkbox" class="slo-header-checkbox" data-slo-index="11" /> SLO6</th>
+<th><input type="checkbox" class="slo-header-checkbox" data-slo-index="12" /> SLO7</th>
+<th><input type="checkbox" class="slo-header-checkbox" data-slo-index="13" /> SLO8</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+        // Tab Switching Logic
+         function switchTab(tabId) {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`button[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+        let processedData = {
+            columnA: [],
+            columnC: [],
+            columnD: []
+        };
+
+        function processData() {
+            // Process Column A data
+            const columnAInput = document.getElementById('columnAInput').value;
+            processedData.columnA = columnAInput.split('\n')
+                .map(line => line.trim())
+                .filter(line => line !== '');
+
+            // Process JSON data
+            const jsonInput = document.getElementById('jsonInput').value;
+            if (!jsonInput.trim()) {
+                alert('Please enter JSON data');
+                return;
+            }
+
+            try {
+                const data = JSON.parse(jsonInput);
+                const baseProductWPSSet = new Set();
+                const productIDSet = new Set();
+
+                // Collect unique values
+                (data.baseProductInfo || []).forEach(baseProduct => {
+                    const baseProductId = baseProduct.baseProductId || '';
+                    const wpsList = (baseProduct.wps || []).map(wps => {
+                        const paddedWPS = wps.padStart(8, '0');
+                        return `WPS - ${paddedWPS}`;
+                    });
+
+                    wpsList.forEach(wps => {
+                        baseProductWPSSet.add(`${baseProductId}/${wps}`);
+                    });
+
+                    (baseProduct.product || []).forEach(product => {
+                        if (product.ProductID) {
+                            productIDSet.add(product.ProductID);
+                        }
+                    });
+                });
+
+                processedData.columnC = Array.from(baseProductWPSSet).sort();
+                processedData.columnD = Array.from(productIDSet).sort();
+
+                // Display columns
+                displayColumns();
+            } catch (error) {
+                alert('Invalid JSON data. Please check your input.');
+                console.error(error);
+            }
+        }
+
+        function displayColumns() {
+            document.getElementById('columnA').textContent = processedData.columnA.join('\n');
+            document.getElementById('columnC').textContent = processedData.columnC.join('\n');
+            document.getElementById('columnD').textContent = processedData.columnD.join('\n');
+        }
+
+        function downloadExcel() {
+            const partnerName = document.getElementById('partnerName').value.trim();
+            if (!partnerName) {
+                alert('Please enter a partner name');
+                return;
+            }
+
+            if (processedData.columnC.length === 0 && processedData.columnD.length === 0) {
+                alert('No data to export');
+                return;
+            }
+
+            // Calculate the maximum length of all columns
+            const maxLength = Math.max(
+                processedData.columnA.length,
+                processedData.columnC.length,
+                processedData.columnD.length
+            );
+
+            // Create array of rows with headers
+            const formattedData = [
+                // Headers row
+                {
+                    "Title": "Title",
+                    "Empty": "",
+                    "TLO_WPS": "TLO_WPS",
+                    "SLOs": "SLO's"
+                }
+            ];
+
+            // Add data rows
+            for (let i = 0; i < maxLength; i++) {
+                formattedData.push({
+                    "Title": processedData.columnA[i] || "",
+                    "Empty": "",
+                    "TLO_WPS": processedData.columnC[i] || "",
+                    "SLOs": processedData.columnD[i] || ""
+                });
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(formattedData, { skipHeader: true });
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'BaseProductInfo');
+
+            // Download file
+            XLSX.writeFile(workbook, `${partnerName}_output.xlsx`);
+        }
+		
+        // Predefined scenarios
+       const scenarios = [
+    'Deactivate', 'Reactivate', 'Activate', 'AddProduct', 'CancelDeviceLocation', 'ChangeMSISDN', 'ChangePlan', 
+    'ChangeSIM',  'HLRBlockSIM', 'ModifySubscriberBucket', 'NGPInquiry', 
+    'QueryNetwork', 'QueryProducts', 'QuerySIM', 'QuerySubscriberUsage', 
+    'QueryTransactionStatus',  'RemoveProduct', 'ReplaceProduct', 
+    'Resume', 'RollbackSIM', 'SendOTAMSISDN', 'SubscriberInquiry', 'Suspend', 
+    'UpdateMiscSubscriberDetails', 'UpdateWPS','UpdateE911Address', 'ValidateAddress'
+];
+const commentValues = [
+    'Query by MSISDN', 'Query by ICCID', 'Query by IMSI'
+];
+		
+
+        // Utility function to populate dropdowns
+    function populateDropdown(dropdown, options, placeholder = '--Select--') {
+    dropdown.innerHTML = `<option value="">${placeholder}</option>`;
+    Array.from(options).forEach(option => {
+        if (option) {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            dropdown.appendChild(opt);
+        }
+    });
+}
+		
+		function updateSelectedRowsColumn(columnIndex, value) {
+    const rows = document.querySelectorAll('#dataTable tbody tr');
+    let updatedRows = 0;
+
+    rows.forEach(row => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        if (checkbox && checkbox.checked) {
+            const cellDropdown = row.cells[columnIndex].querySelector('select');
+            if (cellDropdown) {
+                // Force update the dropdown, regardless of existing value
+                cellDropdown.value = value;
+                
+                // Trigger change event for Select2
+                $(cellDropdown).val(value).trigger('change');
+                
+                updatedRows++;
+            }
+        }
+    });
+
+    if (updatedRows === 0) {
+        alert('Please select at least one row to update.');
+    } else {
+        console.log(`Updated ${updatedRows} row(s) in column ${columnIndex}`);
+    }
+}
+
+// Apply button event listener remains the same as in the previous suggestion
+document.getElementById('ApplyButton').addEventListener('click', function() {
+    // TLO_WPS Update
+    const tloWpsDropdown = document.getElementById('tloWpsDropdown');
+    if (tloWpsDropdown.value) {
+        updateSelectedRowsColumn(4, tloWpsDropdown.value);  // TLO_WPS column
+    }
+
+    // SLO Update
+    const sloDropdowns = [
+        document.getElementById('slo1Dropdown'),
+        document.getElementById('slo2Dropdown'),
+        document.getElementById('slo3Dropdown'),
+        document.getElementById('slo4Dropdown'),
+        document.getElementById('slo5Dropdown'),
+        document.getElementById('slo6Dropdown'),
+        document.getElementById('slo7Dropdown'),
+        document.getElementById('slo8Dropdown')
+    ];
+
+    sloDropdowns.forEach((dropdown, index) => {
+        if (dropdown.value) {
+            updateSelectedRowsColumn(index + 6, dropdown.value);  // SLO columns start at index 6
+        }
+    });
+});
+
+        // Populate global dropdowns
+        function populateDropdowns(data) {
+            const tloWpsDropdown = document.getElementById('tloWpsDropdown');
+          const sloDropdowns = [
+        document.getElementById('slo1Dropdown'),
+        document.getElementById('slo2Dropdown'),
+        document.getElementById('slo3Dropdown'),
+        document.getElementById('slo4Dropdown'),
+        document.getElementById('slo5Dropdown'),
+        document.getElementById('slo6Dropdown'),
+        document.getElementById('slo7Dropdown'),
+        document.getElementById('slo8Dropdown')
+    ];            
+
+            const tloWpsOptions = new Set(data.slice(1).map(row => row[2]).filter(value => value));
+            const sloOptions = new Set(data.slice(1).map(row => row[3]).filter(value => value));
+            const commentOptions = new Set(data.slice(1).map(row => row[4]).filter(value => value));
+
+            populateDropdown(tloWpsDropdown, tloWpsOptions);
+            sloDropdowns.forEach(dropdown => {
+        populateDropdown(dropdown, sloOptions);
+    });
+        }
+
+        // Upload button event listener
+     document.getElementById('uploadButton').addEventListener('click', function () {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const container = document.querySelector('#dataset-preparation .container');
+
+    // Show loading message
+    loadingIndicator.style.display = 'block';
+
+    // Disable all inputs, buttons, selects inside container
+    container.querySelectorAll('input, button, select').forEach(el => {
+        el.disabled = true;
+    });
+
+    const fileInput = document.getElementById('excelFileInput');
+    const file = fileInput.files[0];
+    const downloadButton = document.getElementById('downloadButton');
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                populateDropdowns(json);
+                populateTable(json);
+                downloadButton.style.display = 'inline-block';
+            } catch (err) {
+                alert("Error reading Excel file.");
+                console.error(err);
+            } finally {
+                // Hide loading message
+                loadingIndicator.style.display = 'none';
+
+                // Re-enable all elements
+                container.querySelectorAll('input, button, select').forEach(el => {
+                    el.disabled = false;
+                });
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        alert('Please select an Excel file to upload.');
+
+        // Hide loader and re-enable elements
+        loadingIndicator.style.display = 'none';
+        container.querySelectorAll('input, button, select').forEach(el => {
+            el.disabled = false;
+        });
+    }
+});
+
+
+
+        // Select All checkbox
+       document.getElementById('selectAll').addEventListener('change', function () {
+    const rowCheckboxes = document.querySelectorAll('#dataTable tbody > tr > td:first-child input[type="checkbox"]');
+    rowCheckboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+
+        // Function to generate future date
+        function generateFutureDate() {
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 1);
+    
+    const month = futureDate.getMonth() + 1; // getMonth() returns 0-11
+    const day = futureDate.getDate();
+    const year = futureDate.getFullYear();
+    
+    // Format as MM/DD/YYYY
+    return `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+}
+
+        // Download button event listener
+document.getElementById('downloadButton').addEventListener('click', function() {
+    const rows = document.querySelectorAll('#dataTable tbody tr');
+    const fileName = document.getElementById('fileName').value.trim();
+    const tdmPartner = document.getElementById('tdmPartner').value.trim();
+    const selectedRows = Array.from(rows).filter(row => row.querySelector('input[type="checkbox"]').checked);
+// Reset previous highlights
+    rows.forEach(row => {
+        const scenarioCell = row.cells[3]; // Scenario column
+        scenarioCell.style.backgroundColor = '';
+    });
+	
+    const validationErrors = [];
+
+   if (!fileName) validationErrors.push('Enter a File Name');
+   if (!tdmPartner) validationErrors.push('Enter a TDM Partner name');
+   if (selectedRows.length === 0) validationErrors.push('Select at least one row');
+
+   // Check Scenario validation
+   const incompleteScenarioRows = selectedRows.filter(row => {
+       const scenarioDropdown = row.cells[3].querySelector('select');
+       const isEmptyScenario = !scenarioDropdown.value;
+       
+       if (isEmptyScenario) {
+           row.cells[3].style.backgroundColor = '#ffcccc';
+       }
+       
+       return isEmptyScenario;
+   });
+
+   if (incompleteScenarioRows.length > 0) {
+       validationErrors.push('Fill Scenario for all selected rows');
+   }
+
+   // Prevent download if any validation errors
+   if (validationErrors.length > 0) {
+       alert(validationErrors.join('\n'));
+       return;
+   }
+
+    const exportData = [];
+    exportData.push([
+        'TEST_RUN_ID', 'Title', 'Scenario', 'PLAN', 'SOC', 
+        'FEATURE', 'FEATURE_VALUE', 'COMMENTS', 'ENABLED'
+    ]);
+
+    let serialNumber = 1;
+
+    function generateFutureDate() {
+        const futureDate = new Date();
+        futureDate.setFullYear(futureDate.getFullYear() + 1);
+        const month = futureDate.getMonth() + 1;
+        const day = futureDate.getDate();
+        const year = futureDate.getFullYear();
+        return `${month.toString().padStart(2, '0')}/${day.toString().padStart(2, '0')}/${year}`;
+    }
+
+    rows.forEach(row => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        if (!checkbox.checked) return;
+
+        const title = row.cells[2].textContent;
+        const scenario = row.cells[3].querySelector('select').value;
+        const plan = row.cells[4].querySelector('select').value;
+        const tloWps2 = row.cells[5].querySelector('select').value;
+        const comment = row.cells[14].querySelector('select');
+        let commentValue = scenario === 'ModifySubscriberBucket' 
+            ? 'Autonew,Bucketvalue' 
+            : (tloWps2 || comment.value);
+
+        // Handle ReplaceProduct scenario
+        if (scenario === 'ReplaceProduct') {
+            const slo1 = row.cells[6].querySelector('select').value;
+            const slo2 = row.cells[7].querySelector('select').value;
+            const slo3 = row.cells[8].querySelector('select').value;
+            const slo4 = row.cells[9].querySelector('select').value;
+            const slo5 = row.cells[10].querySelector('select').value;
+            const slo6 = row.cells[11].querySelector('select').value;
+            const slo7 = row.cells[12].querySelector('select').value;
+            const slo8 = row.cells[13].querySelector('select').value;
+
+            if (slo1) exportData.push([serialNumber, title, scenario, plan, `From1:${slo1}`, '', '', '', '']);
+            if (slo2) exportData.push([serialNumber, '', scenario, plan, `To1:${slo2}`, '', '', '', '']);
+            if (slo3) exportData.push([serialNumber, '', scenario, plan, `From2:${slo3}`, '', '', '', '']);
+            if (slo4) exportData.push([serialNumber, '', scenario, plan, `To2:${slo4}`, '', '', '', '']);
+            if (slo5) exportData.push([serialNumber, '', scenario, plan, `From3:${slo5}`, '', '', '', '']);
+            if (slo6) exportData.push([serialNumber, '', scenario, plan, `To3:${slo6}`, '', '', '', '']);
+            if (slo7) exportData.push([serialNumber, '', scenario, plan, `From4:${slo7}`, '', '', '', '']);
+            if (slo8) exportData.push([serialNumber, '', scenario, plan, `To4:${slo8}`, '', '', '', '']);
+            
+            serialNumber++;
+            return; // Skip the rest of the processing for ReplaceProduct
+        }
+
+        const sloValues = [];
+         for (let i = 6; i <= 13; i++) {
+             const sloCell = row.cells[i].querySelector('select');
+            const sloValue = sloCell ? sloCell.value : "";
+            if (sloValue) sloValues.push(sloValue);
+         }
+		  // If no SLOs are selected, push one row with generic data
+        if (sloValues.length === 0) {
+            exportData.push([
+                serialNumber, 
+                title,
+                scenario,
+                plan,
+                '',
+                '',
+                '',
+                commentValue,
+                ''
+            ]);
+            serialNumber++;
+            return;
+        }
+
+        let isFirstRow = true;
+        
+        if (scenario === 'QueryProducts') {
+            sloValues.forEach(sloValue => {
+                exportData.push([
+                serialNumber, 
+                    isFirstRow ? title : '',
+                    scenario,
+                    plan,
+                    sloValue,
+                    '',  // Empty feature
+                    '',  // Empty feature value
+                    isFirstRow ? commentValue : '',
+                    ''
+                ]);
+                isFirstRow = false;
+            });
+        } else {
+            // For all other scenarios, keep the existing logic
+            sloValues.forEach(sloValue => {
+                if (sloValue === 'E911') {
+                    const e911Features = {
+                        'Address': '4601 Ridgeview Rd',
+                        'City': 'Atlanta',
+                        'State': 'GA',
+                        'ZipCode': '30338'
+                    };
+                    
+                    Object.entries(e911Features).forEach(([feature, value]) => {
+                        exportData.push([
+                serialNumber, 
+                            isFirstRow ? title : '',
+                            scenario,
+                            plan,
+                            sloValue,
+                            feature,
+                            value,
+                            isFirstRow ? commentValue : '',
+                            ''
+                        ]);
+                        isFirstRow = false;
+                    });
+					['WFC', 'IMS', 'IPMS'].forEach(additionalSLO => {
+                    exportData.push([
+                        serialNumber, 
+                        '', 
+                        scenario,
+                        plan,
+                        additionalSLO,
+                        '',
+                        '',
+                        '',
+                        ''
+                    ]);
+                });
+					
+                } else if (sloValue.startsWith('NC_')) {
+                    const ncFeatures = [
+                        ['Bucket Size', '1024'],
+                        ['Exp. Date', generateFutureDate()],
+						['Threshold', 'Tier4'],
+                        ['ThresholdValue', '1024'],
+                        ['Behavior', 'notifyonly']
+                    ];
+                    
+                    ncFeatures.forEach(([feature, value]) => {
+                        exportData.push([
+                serialNumber, 
+                            isFirstRow ? title : '',
+                            scenario,
+                            plan,
+                            sloValue,
+                            feature,
+                            value,
+                            isFirstRow ? commentValue : '',
+                            ''
+                        ]);
+                        isFirstRow = false;
+                    });
+                } else {
+    let feature = '';
+    let featureValue = '';
+
+    // Find the corresponding SLO cell index and check the checkbox
+    for (let i = 6; i <= 13; i++) {
+        const sloCell = row.cells[i];
+        const dropdown = sloCell.querySelector('select');
+        const checkbox = sloCell.querySelector('input[type="checkbox"]');
+        
+        if (dropdown && dropdown.value === sloValue && checkbox && checkbox.checked) {
+            feature = 'Mandatory';
+            featureValue = 'Yes';
+            break;
+        }
+    }
+
+    exportData.push([
+        serialNumber, 
+        isFirstRow ? title : '',
+        scenario,
+        plan,
+        sloValue,
+        feature,
+        featureValue,
+        isFirstRow ? commentValue : '',
+        ''
+    ]);
+    isFirstRow = false;
+}
+            });
+        }
+
+        serialNumber++;
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
+    XLSX.utils.book_append_sheet(wb, ws, tdmPartner);
+
+    XLSX.writeFile(wb, `${fileName}.xlsx`);
+});
+
+function findBestTloWpsMatch(title, tloWpsOptions) {
+    // Clean and normalize the title
+    const titleLower = title.toLowerCase()
+        .replace(/[\[\]]/g, '')
+        .replace(/rest api/i, '')
+        .trim();
+
+    let bestMatch = null;
+    let highestMatchScore = 0;
+
+    Array.from(tloWpsOptions).forEach(tloWps => {
+        const tloWpsLower = tloWps.toLowerCase();
+        
+        // Split both strings into significant terms
+        const tloWpsTerms = tloWpsLower
+            .replace(/[\/\-_]/g, ' ')
+            .split(' ')
+            .filter(term => term.length > 2 && !['wps', 'the', 'and'].includes(term));
+
+        const titleTerms = titleLower
+            .replace(/[\/\-_]/g, ' ')
+            .split(' ')
+            .filter(term => term.length > 2 && !['wps', 'the', 'and'].includes(term));
+
+        // Calculate match score
+        let matchScore = 0;
+        tloWpsTerms.forEach(term => {
+            if (titleTerms.includes(term)) {
+                matchScore += term.length;
+            }
+        });
+
+        if (matchScore > highestMatchScore) {
+            highestMatchScore = matchScore;
+            bestMatch = tloWps;
+        }
+    });
+
+    return highestMatchScore > 8 ? bestMatch : null;
+}
+
+function extractSLOsFromTitle(title, availableSLOs) {
+    // Convert title and clean it
+    title = String(title).replace(/[\[\]]/g, '');
+    
+    // Convert both title and SLOs to lowercase for case-insensitive matching
+    const titleLower = title.toLowerCase();
+    const sloMap = new Map(Array.from(availableSLOs).map(slo => [slo.toLowerCase(), slo]));
+    
+    // Find all matching SLOs while preserving their original case
+    const matches = [];
+    sloMap.forEach((originalSLO, lowerSLO) => {
+        if (titleLower.includes(lowerSLO)) {
+            matches.push(originalSLO);
+        }
+    });
+    
+    console.log('Available SLOs:', Array.from(availableSLOs));
+    console.log('Found SLOs in title:', matches);
+    return matches;
+}
+
+function populateTable(data) {
+    if (!data || !data.length) {
+        console.error('No data provided to populateTable');
+        return;
+    }
+
+    const tableBody = document.getElementById('dataTable').querySelector('tbody');
+    tableBody.innerHTML = '';
+
+    // Extract unique options from data
+    const tloWpsOptions = new Set();
+    const sloOptions = new Set();
+    const commentOptions = new Set();
+
+    // Skip header row and collect unique values
+    data.slice(1).forEach(row => {
+        if (row[2]) tloWpsOptions.add(row[2]);
+        if (row[3]) sloOptions.add(row[3]);
+        if (row[4]) commentOptions.add(row[4]);
+    });
+
+    // Populate table rows
+    data.slice(1).forEach((row, index) => {
+        if (!row[0]) return; // Skip empty rows
+
+        const tr = document.createElement('tr');
+        const title = row[0];
+        
+        // Extract SLOs from title using available SLO options
+        const matchingSlos = extractSLOsFromTitle(title, sloOptions);
+
+        // Add checkbox cell
+        tr.innerHTML = `
+            <td><input type="checkbox"></td>
+            <td>${index + 1}</td>
+            <td>${title}</td>
+        `;
+
+        // Add Scenario dropdown
+        const scenarioCell = document.createElement('td');
+        const scenarioDropdown = document.createElement('select');
+        scenarioDropdown.innerHTML = `
+            <option value="">Select Scenario</option>
+            ${scenarios.map(scenario => `
+                <option value="${scenario}" ${
+                    title.toLowerCase().includes(scenario.toLowerCase()) ? 'selected' : ''
+                }>${scenario}</option>
+            `).join('')}
+        `;
+        scenarioCell.appendChild(scenarioDropdown);
+        tr.appendChild(scenarioCell);
+
+        // Add TLO_WPS dropdown with auto-selection
+        const tloWpsCell = document.createElement('td');
+        const tloWpsDropdown = document.createElement('select');
+        tloWpsDropdown.innerHTML = '<option value="">Select TLO_WPS</option>';
+        
+        const bestMatch = findBestTloWpsMatch(title, tloWpsOptions);
+        
+        Array.from(tloWpsOptions).forEach(tloWps => {
+            const option = document.createElement('option');
+            option.value = tloWps;
+            option.textContent = tloWps;
+            if (bestMatch && tloWps === bestMatch) {
+                option.selected = true;
+            }
+            tloWpsDropdown.appendChild(option);
+        });
+        tloWpsCell.appendChild(tloWpsDropdown);
+        tr.appendChild(tloWpsCell);
+
+        // Add TLO_WPS2 dropdown
+        const tloWps2Cell = document.createElement('td');
+        const tloWps2Dropdown = document.createElement('select');
+        populateDropdown(tloWps2Dropdown, tloWpsOptions, 'Select TLO_WPS2');
+        tloWps2Cell.appendChild(tloWps2Dropdown);
+        tr.appendChild(tloWps2Cell);
+
+        
+        // Add SLO1-SLO8 dropdowns with auto-selection and checkbox
+        for (let i = 0; i < 8; i++) {
+            const sloCell = document.createElement('td');
+            const sloWrapper = document.createElement('div');
+sloWrapper.style.display = 'flex';
+sloWrapper.style.alignItems = 'center';
+sloWrapper.style.gap = '4px';
+
+const sloCheckbox = document.createElement('input');
+sloCheckbox.type = 'checkbox';
+sloCheckbox.classList.add('slo-checkbox');
+
+const sloDropdown = document.createElement('select');
+sloDropdown.innerHTML = `<option value="">Select SLO${i + 1}</option>`;
+Array.from(sloOptions).forEach(slo => {
+    const option = document.createElement('option');
+    option.value = slo;
+    option.textContent = slo;
+    if (matchingSlos[i] && slo === matchingSlos[i]) {
+        option.selected = true;
+    }
+    sloDropdown.appendChild(option);
+});
+
+// Plus button
+const plusButton = document.createElement('button');
+plusButton.textContent = '+';
+plusButton.type = 'button';
+plusButton.style.padding = '2px 6px';
+plusButton.style.borderRadius = '50%';
+plusButton.style.fontSize = '12px';
+plusButton.style.cursor = 'pointer';
+
+// Tier checkbox container (initially hidden)
+const tierContainer = document.createElement('div');
+tierContainer.style.display = 'none';
+tierContainer.style.flexDirection = 'column';
+tierContainer.style.marginLeft = '5px';
+
+['Tier1', 'Tier2', 'Tier3'].forEach(tier => {
+    const label = document.createElement('label');
+    label.style.fontSize = '12px';
+    label.style.display = 'flex';
+    label.style.alignItems = 'center';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.name = `tier-${tier}`;
+    checkbox.style.marginRight = '4px';
+    label.appendChild(checkbox);
+    label.append(tier);
+    tierContainer.appendChild(label);
+});
+
+plusButton.addEventListener('click', () => {
+    const isVisible = tierContainer.style.display === 'flex';
+    tierContainer.style.display = isVisible ? 'none' : 'flex';
+    plusButton.textContent = isVisible ? '+' : '–';
+});
+
+
+sloWrapper.appendChild(sloCheckbox);
+sloWrapper.appendChild(sloDropdown);
+sloWrapper.appendChild(plusButton);
+sloWrapper.appendChild(tierContainer);
+            sloCell.appendChild(sloWrapper);
+            tr.appendChild(sloCell);
+        }
+
+
+        const commentCell = document.createElement('td');
+    const commentDropdown = document.createElement('select');
+    populateDropdown(commentDropdown, commentValues, 'Select Comment');
+        
+        // Add TLO_WPS2 and Comment interaction
+        tloWps2Dropdown.addEventListener('change', function() {
+            commentDropdown.disabled = !!this.value;
+            if (this.value) {
+                commentDropdown.selectedIndex = 0;
+            }
+        });
+
+        commentCell.appendChild(commentDropdown);
+        tr.appendChild(commentCell);
+
+        tableBody.appendChild(tr);
+    });
+
+    // Initialize Select2 for all dropdowns
+    $(document).ready(function() {
+        // Initialize table dropdowns
+$('#dataTable select').select2({
+    width: '100%',
+    dropdownParent: $('body'), // This fixes the positioning issue
+    placeholder: function() {
+        return $(this).find('option:first').text();
+    }
+});
+
+
+
+        // Initialize global dropdowns
+        $('#tloWpsDropdown, [id^=slo][id$=Dropdown]').select2({
+            width: '100%',
+            placeholder: function() {
+                return $(this).find('option:first').text();
+            }
+        });
+		// Handle SLO header checkbox to check/uncheck column checkboxes
+document.querySelectorAll('.slo-header-checkbox').forEach(headerCheckbox => {
+    headerCheckbox.addEventListener('change', function () {
+        const columnIndex = parseInt(this.dataset.sloIndex);
+        const rows = document.querySelectorAll('#dataTable tbody tr');
+
+        rows.forEach(row => {
+            const checkbox = row.cells[columnIndex].querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = this.checked;
+        });
+    });
+});
+
+    });
+}
+$(document).ready(function() {
+    // Initialize TLO_WPS dropdown with a custom placeholder
+    $('#tloWpsDropdown').select2({
+        placeholder: "Select TLO_WPS...",
+        allowClear: true
+    });
+
+    // Initialize SLO's dropdown with placeholders
+    $('#slo1Dropdown').select2({
+        placeholder: "Select SLO1...",
+        allowClear: true
+    });
+
+    $('#slo2Dropdown').select2({
+        placeholder: "Select SLO2...",
+        allowClear: true
+    });
+
+    $('#slo3Dropdown').select2({
+        placeholder: "Select SLO3...",
+        allowClear: true
+    });
+
+    $('#slo4Dropdown').select2({
+        placeholder: "Select SLO4...",
+        allowClear: true
+    });
+
+    $('#slo5Dropdown').select2({
+        placeholder: "Select SLO5...",
+        allowClear: true
+    });
+
+    $('#slo6Dropdown').select2({
+        placeholder: "Select SLO6...",
+        allowClear: true
+    });
+
+    $('#slo7Dropdown').select2({
+        placeholder: "Select SLO7...",
+        allowClear: true
+    });
+
+    $('#slo8Dropdown').select2({
+        placeholder: "Select SLO8...",
+        allowClear: true
+    });
+});
+
+</script>
+</body>
+</html>

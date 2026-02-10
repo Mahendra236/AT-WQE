@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<style>
+    body {
+             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+        .container {
+            margin: auto;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        textarea {
+            width: 98%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 6px;
+        }
+        .file-input-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .buttons-section {
+            display: flex;
+            gap: 10px;
+        }
+        button {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        #process-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        #process-btn:hover {
+            background-color: #218838;
+        }
+        #download-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        #download-btn:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background: #007bff;
+            color: white;
+			position: sticky;
+        }
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+		.property-item, .path-item, .value-item {
+    word-wrap: break-word;
+    max-width: 300px;
+    display: inline-block;
+    white-space: normal;
+}
+.json-path-column {
+            display: none; /* Hide by default */
+        }
+        .show-json-path .json-path-column {
+            display: table-cell;
+        }
+		
+		 #results-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    #results-table th:nth-child(1), #results-table td:nth-child(1) {
+        width: 2%; /* Row Number */
+    }
+
+    #results-table th:nth-child(2), #results-table td:nth-child(2) {
+        width: 20%; /* Title */
+    }
+
+    #results-table th:nth-child(3), #results-table td:nth-child(3) {
+        width: 25%; /* Property */
+    }
+
+    /* Wrapping and overflow handling */
+    #results-table td {
+        word-wrap: break-word;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #results-table {
+    table-layout: auto; /* Auto layout for better content fitting */
+    width: 100%;
+}
+
+@media screen and (max-width: 768px) {
+    #results-table {
+        font-size: 12px; /* Smaller text size on small screens */
+    }
+}
+</style>
+<body>
+    <div class="container">
+        <div class="json-section">
+            <label for="json-input">Paste JSON:</label>
+            <textarea id="json-input" rows="6" placeholder="Paste CR JSON here..."></textarea>
+        </div>
+        <div class="controls-row">
+            <div class="file-input-wrapper">
+                <label for="excel-file">Upload Excel File:</label>
+                <input type="file" id="excel-file" accept=".xlsx, .xls">
+            </div>
+            <div class="buttons-section">
+                <button id="process-btn">Process</button>
+                <button id="download-btn" disabled>Download</button>
+            </div>
+			 <div class="toggle-section">
+                <label>
+                    <input type="checkbox" id="show-json-path-toggle"> 
+                     JSON Path
+                </label>
+            </div>
+        </div>
+        <div class="results-section">
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Title</th>
+                        <th>Property</th>
+                        <th class="json-path-column">JSON Path</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // Add event listeners when the document loads
+document.addEventListener('DOMContentLoaded', function() {
+    const processBtn = document.getElementById('process-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const showJsonPathToggle = document.getElementById('show-json-path-toggle');
+    const jsonPathHeader = document.querySelector('#results-table thead tr th:nth-child(4)');
+
+    processBtn.addEventListener('click', processData);
+    downloadBtn.addEventListener('click', downloadExcel);
+
+    // JSON Path Toggle
+    showJsonPathToggle.addEventListener('change', function() {
+        const jsonPathCells = document.querySelectorAll('#results-table tbody .json-path-cell');
+        
+        if (this.checked) {
+            // Show header
+            if (jsonPathHeader) jsonPathHeader.style.display = 'table-cell';
+            
+            // Show cells
+            jsonPathCells.forEach(cell => {
+                cell.style.display = 'table-cell';
+            });
+        } else {
+            // Hide header
+            if (jsonPathHeader) jsonPathHeader.style.display = 'none';
+            
+            // Hide cells
+            jsonPathCells.forEach(cell => {
+                cell.style.display = 'none';
+            });
+        }
+    });
+});
+		
+        function downloadExcel() {
+            const filename = 'OutPut.xlsx';
+            
+            const resultsTable = document.getElementById('results-table');
+            const rows = resultsTable.getElementsByTagName('tr');
+            const workbook = XLSX.utils.book_new();
+            const worksheet_data = [];
+
+            // Add header row
+            worksheet_data.push(['Row #', 'Title', 'Value']);
+
+            // Process each row (skip header row)
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                if (cells.length > 0) {
+                    const rowNum = cells[0].textContent;
+                    const title = cells[1].textContent;
+                    const valueCell = cells[4];
+                    
+                    // Get all value items
+                    const valueItems = valueCell.getElementsByClassName('value-item');
+                    let values = [];
+                    for (let item of valueItems) {
+                        values.push(item.textContent);
+                    }
+
+                    // Create formatted value string
+                    let formattedValue = '';
+                    if (values.length > 0) {
+                        formattedValue = `${title}\n\nER:\n${values.join('\n')}`;
+                    } else {
+                        formattedValue = `${title}\n\nER:`;
+                    }
+
+                    worksheet_data.push([
+                        rowNum,
+                        title,
+                        formattedValue
+                    ]);
+                }
+            }
+
+            // Create worksheet and add formatting
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheet_data);
+            
+            // Set column widths
+            worksheet['!cols'] = [
+                { wch: 10 },  // Row #
+                { wch: 30 },  // Title
+                { wch: 50 }   // Value
+            ];
+
+            // Add worksheet to workbook and download
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Results');
+            XLSX.writeFile(workbook, filename);
+        }
+
+	function processData() {
+    const fileInput = document.getElementById('excel-file');
+    const jsonInput = document.getElementById('json-input').value;
+    const resultsTable = document.getElementById('results-table').getElementsByTagName('tbody')[0];
+    const downloadBtn = document.getElementById('download-btn');
+    const showJsonPathToggle = document.getElementById('show-json-path-toggle');
+
+    // Clear previous results
+    resultsTable.innerHTML = '';
+    downloadBtn.disabled = true;
+
+    if (!fileInput.files.length || !jsonInput) {
+        alert('Please upload an Excel file and paste JSON data.');
+        return;
+    }
+
+    // Parse JSON
+    let jsonData;
+    try {
+        jsonData = JSON.parse(jsonInput);
+    } catch (e) {
+        alert('Invalid JSON data.');
+        return;
+    }
+
+    // Read Excel file
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const excelData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+            if (excelData.length === 0) {
+                alert('The Excel file is empty.');
+                return;
+            }
+
+            // Filter to include all rows that have a value in Column A
+            const validRows = excelData.filter(row => row[0]);
+
+            if (validRows.length === 0) {
+                alert('No titles found in Column A of the Excel file.');
+                return;
+            }
+
+            // Process each row
+            validRows.forEach((row, index) => {
+                const rowNumber = index + 2;
+                const title = row[0] || '';
+                const cellContent = row[1] || '';
+
+                const tableRow = resultsTable.insertRow();
+                
+                tableRow.insertCell().textContent = rowNumber;
+                tableRow.insertCell().textContent = title;
+
+                if (cellContent) {
+                    const properties = splitProperties(cellContent);
+                    
+                    const results = properties.map(property => {
+                        property = property.trim();
+                        if (!property) return null;
+                        const result = findPathAndValue(jsonData, property);
+                        return {
+                            property,
+                            path: result.path || 'N/A',
+                            value: formatValue(result.value)
+                        };
+                    }).filter(Boolean);
+
+                    const propertyCell = tableRow.insertCell();
+                    propertyCell.innerHTML = results.map(r => `<span class="property-item">${r.property}</span>`).join('<br>');
+                    
+                    const pathCell = tableRow.insertCell();
+                    pathCell.innerHTML = results.map(r => `<span class="path-item">${r.path}</span>`).join('<br>');
+                    pathCell.classList.add('json-path-cell');
+                    
+                    // Initially hide path cell if toggle is not checked
+                    if (showJsonPathToggle && !showJsonPathToggle.checked) {
+                        pathCell.style.display = 'none';
+                    }
+                    
+                    const valueCell = tableRow.insertCell();
+                    valueCell.innerHTML = results.map(r => `<span class="value-item">${r.value}</span>`).join('<br>');
+                } else {
+                    tableRow.insertCell().textContent = '';
+                    tableRow.insertCell().textContent = '';
+                    tableRow.insertCell().textContent = '';
+                }
+            });
+
+            // Enable download button after successful processing
+            downloadBtn.disabled = false;
+        } catch (error) {
+            alert('Error processing the Excel file: ' + error.message);
+        }
+    };
+
+    reader.onerror = function() {
+        alert('Error reading the Excel file.');
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+        // Helper functions remain the same
+        function formatValue(value) {
+            if (value === undefined) return 'Not Found';
+            if (value === true) return 'Yes';
+            if (value === false) return 'No';
+            if (value === null) return 'null';
+            if (typeof value === 'object') return JSON.stringify(value);
+            return String(value);
+        }
+
+        function splitProperties(cellContent) {
+            if (!cellContent) return [];
+            const separators = /[\n;,]|\s{2,}/;
+            return cellContent
+                .split(separators)
+                .map(prop => prop.trim())
+                .filter(prop => prop.length > 0);
+        }
+
+        function findPathAndValue(obj, targetPath) {
+            if (targetPath.includes('.') || targetPath.includes('[')) {
+                const value = getValueFromPath(obj, targetPath);
+                if (value !== undefined) {
+                    return { path: targetPath, value };
+                }
+            }
+            const partialPathValue = searchPartialPath(obj, targetPath);
+            if (partialPathValue.path) {
+                return partialPathValue;
+            }
+            return searchDeepKey(obj, targetPath);
+        }
+
+        function searchPartialPath(obj, partialPath, basePath = '') {
+            for (let key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    const currentPath = basePath ? `${basePath}.${key}` : key;
+                    if (Array.isArray(obj[key])) {
+                        for (let i = 0; i < obj[key].length; i++) {
+                            const arrayPath = `${currentPath}[${i}]`;
+                            const value = getValueFromPath(obj[key][i], partialPath);
+                            if (value !== undefined) {
+                                return { path: `${arrayPath}.${partialPath}`, value };
+                            }
+                            if (typeof obj[key][i] === 'object' && obj[key][i] !== null) {
+                                const result = searchPartialPath(obj[key][i], partialPath, arrayPath);
+                                if (result.path) {
+                                    return result;
+                                }
+                            }
+                        }
+                    }
+                    const value = getValueFromPath(obj[key], partialPath);
+                    if (value !== undefined) {
+                        return { path: `${currentPath}.${partialPath}`, value };
+                    }
+                    if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                        const result = searchPartialPath(obj[key], partialPath, currentPath);
+                        if (result.path) {
+                            return result;
+                        }
+                    }
+                }
+            }
+            return { path: null, value: undefined };
+        }
+
+        function searchDeepKey(obj, key, path = '') {
+            if (Array.isArray(obj)) {
+                for (let i = 0; i < obj.length; i++) {
+                    const arrayPath = path ? `${path}[${i}]` : `[${i}]`;
+                    if (typeof obj[i] === 'object' && obj[i] !== null) {
+                        const result = searchDeepKey(obj[i], key, arrayPath);
+                        if (result.path) {
+                            return result;
+                        }
+                    }
+                }
+                return { path: null, value: undefined };
+            }
+            for (let prop in obj) {
+                if (obj.hasOwnProperty(prop)) {
+                    const currentPath = path ? `${path}.${prop}` : prop;
+                    if (prop === key) {
+                        return { path: currentPath, value: obj[prop] };
+                    }
+                    if (typeof obj[prop] === 'object' && obj[prop] !== null) {
+                        const result = searchDeepKey(obj[prop], key, currentPath);
+                        if (result.path) {
+                            return result;
+                        }
+                    }
+                }
+            }
+            return { path: null, value: undefined };
+        }
+
+        function getValueFromPath(obj, path) {
+    try {
+        // Handle paths that start with [0]
+        if (path.startsWith('[0]')) {
+            path = path.slice(3);  // Remove the initial [0]
+        }
+
+        const parts = path.split('.').map(part => {
+            const match = part.match(/^(.*?)\[(\d+)\]$/);
+            if (match) {
+                return [match[1], match[2]];
+            }
+            return part;
+        }).flat().filter(part => part !== '');
+
+        return parts.reduce((acc, part) => {
+            if (acc === undefined) return undefined;
+            return acc[part];
+        }, obj);
+    } catch (e) {
+        return undefined;
+    }
+}
+    </script>
+</body>
+</html>

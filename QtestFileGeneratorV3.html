@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Upload and Process</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+         :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;	
+			--background-color: #ffffff;
+    --border-color: #dddddd;
+    --text-color: #333333;
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --overlay-color: rgba(0, 0, 0, 0.5);
+    --border-radius: 8px;
+    --transition-speed: 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .container {
+            position: relative;
+            width: 95%;
+            max-width: 1400px;
+            margin: 0.5rem auto;
+            background-color: white;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            color: white;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 0px 0px 0px 0;
+            position: relative;
+            margin: 0;
+            padding: .2rem;
+        }
+
+        .form-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			
+        }
+
+      .form-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 13%;
+    min-width: 120px;
+}
+
+
+        .form-group label {
+            font-weight: bold;
+            color: #007BFF;
+            margin-bottom: 8px;
+        }
+
+        .form-group select, 
+        .form-group input[type="text"] {
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            width: 100%;
+            box-sizing: border-box;
+        }
+		#excelFile {
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 0.7rem;
+}
+
+
+
+        .upload-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0px;
+            gap: 8px;
+            background-color: #ffffff;
+            padding: 15px;
+        }
+
+        .action-metrics-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 20px auto;
+            padding: 0 20px;
+            background-color: #fff;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 2;
+        }
+
+        .metrics {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .search-input {
+            flex: 0.5;
+			width: 150px; /* Or adjust as needed */
+            padding: 10px 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+		.info-icon {
+    background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+			font-weight: bold;
+
+}
+
+.info-icon:hover {
+ background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .metric-label {
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: var(--primary-color);
+            min-width: 20px;
+            text-align: right;
+        }
+
+        .table-container {
+            width: 100%;
+            max-height: 800px;
+            overflow-x: auto;
+            overflow-y: auto;
+            margin-top: 15px;
+            border: 0px solid #ddd;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+			position: sticky;
+            top: 0;
+            z-index: 2;
+            border-bottom: 2px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            word-wrap: break-word;
+        }
+
+        tr:nth-child(odd) td {
+            background-color: #f1f1f1;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #ffffff;
+        }
+
+        tr:hover td {
+            background-color: #e0e0e0;
+        }
+
+        @media (max-width: 1200px) {
+            .action-metrics-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .actions {
+                width: 100%;
+            }
+
+            .metrics {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                width: 100%;
+                padding: 10px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .metrics {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+		.popup {
+            display: none;
+            position: fixed;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -20%);
+            width: 60%;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+           font-family: 'Fira Code', 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: normal;
+            font-style: normal;
+            line-height: 1.5;
+        }
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #007BFF;
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+        .popup-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+        }
+        .popup-tabs button {
+           flex: 1;
+    padding: 12px;
+    background: transparent;
+    color: var(--text-color, #555);
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center; /* Ensuring button text alignment */
+    transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .popup-tabs button.active {
+           background: transparent;
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        .popup-content {
+            padding: 8px;
+            display: none;
+        }
+        .popup-content.active {
+            display: block;
+        }
+        .popup-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        .popup-table th,
+        .popup-table td {
+            padding: 6px;
+            border: 1px solid #ddd;
+        }
+        .popup-close {
+            cursor: pointer;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        @media (max-width: 768px) {
+            .container {
+                width: 100%;
+                padding: 10px;
+            }
+            .form-row {
+                flex-direction: column;
+            }
+            .form-row input,
+            .form-row select {
+                width: 100%;
+            }
+            button {
+                margin: 5px;
+            }
+            .popup {
+                width: 70%;
+            }
+        }
+		.highlight-missing {
+    border: 2px solid red !important;
+    background-color: #ffe6e6 !important;
+}
+/* Add these CSS rules to your existing style section */
+.filter-icon {
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: 0.8rem;
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    text-align: center;
+    vertical-align: middle;
+    color: #fff;
+    background-color: #007BFF;
+    border-radius: 3px;
+}
+
+.filter-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    z-index: 100;
+    display: none;
+    width: max-content;
+    min-width: 150px;
+}
+
+.filter-dropdown label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    color: #333333; /* You can change this to any color you prefer */
+}
+
+
+    </style>
+</head>
+
+<body>
+  
+<div class="form-container">
+
+<div class="form-group">
+        <label for="excelFile">Upload Excel File:</label>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" required>
+    </div>
+            <div class="form-group">
+                <label for="storyId">Story ID:</label>
+                <input type="text" id="storyId" placeholder="Enter Story Id">
+            </div>
+
+            <div class="form-group">
+                <label for="mdId">MD ID:</label>
+                <input type="text" id="mdId" placeholder="MD-(Enter ID Number)">
+            </div>
+
+            <div class="form-group">
+    <label for="testCategory">Test Category:</label>
+    <select id="testCategory">
+	    <option value="" selected>Select Category..</option>
+        <option value="Progression">Progression</option>
+        <option value="Regression">Regression</option>
+    </select>
+</div>
+
+<div class="form-group">
+    <label for="testMethod">Test Method:</label>
+    <select id="testMethod">
+	    <option value="" selected>Select Method..</option>
+        <option value="Hybrid">Hybrid</option>
+        <option value="Manual">Manual</option>
+        <option value="Automation">Automation</option>
+    </select>
+</div>
+<div class="form-group">
+    <label for="qatBot">QAT/BOT:</label>
+    <select id="qatBot" onchange="updateJourneyOptions()">
+        <option value="QAT">QAT</option>
+        <option value="BOT">BOT</option>
+    </select>
+</div>
+
+<div class="form-group">
+    <label for="journeyScenario">Journey Scenario:</label>
+    <select id="journeyScenario"></select>
+</div>
+
+
+        </div>
+
+        <div class="action-metrics-row">
+            <div class="actions">
+                <input type="text" id="searchInput" placeholder="Filter test cases..." class="search-input">
+                <button type="button" onclick="applySelectedValues()">Update</button>
+				<button type="button" onclick="deleteSelectedRows()">Delete TC</button>
+				<button type="button" onclick="clearAllFilters()">Clear Filters</button>
+                <button type="button" onclick="refresh()" title="Refresh">
+                <i class="fa-sharp fa-solid fa-rotate-right"></i>
+                </button>
+				        <span class="info-icon" onclick="togglePopup()"><i class="fa-solid fa-info"></i></span>
+
+            </div>
+            <div class="metrics">
+			<div class="metric">
+             <span class="metric-label">Total:</span>
+             <span class="metric-value" id="countTotal">0</span>
+            </div>
+			<div class="metric">
+                 <span class="metric-label">Progression:</span>
+                 <span class="metric-value" id="countProgression">0</span>
+               </div>
+               <div class="metric">
+                 <span class="metric-label">Regression:</span>
+                 <span class="metric-value" id="countRegression">0</span>
+               </div>
+
+                <div class="metric">
+                    <span class="metric-label">Manual:</span>
+                    <span class="metric-value" id="countManual">0</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Hybrid:</span>
+                    <span class="metric-value" id="countHybrid">0</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Automation:</span>
+                    <span class="metric-value" id="countAutomation">0</span>
+                </div>
+            </div>
+			
+			<div class="actions">
+				<button type="button" onclick="downloadTemplate()">Download Template</button>
+				<button type="button" onclick="downloadExcel()">Genarate Excel</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="outputTable"></table>
+        </div>
+    </div>
+    
+	<!-- Popup and overlay -->
+    <div class="overlay" onclick="togglePopup()"></div>
+    <div class="popup" id="infoPopup">
+        <div class="popup-header">
+            <span>Information</span>
+            <span class="popup-close" onclick="togglePopup()">&times;</span>
+        </div>
+        <div class="popup-tabs">
+		    <button onclick="showTab('links')" id="linksTab" class="active">Links</button>
+            <button onclick="showTab('mapping')" id="mappingTab" >Mapping</button>
+        </div>
+        <div id="mappingContent" class="popup-content ">
+            <table class="popup-table">
+                <tr>
+                    <th>Column</th>
+                    <th>Test Case Fields</th>
+                    <th>Data</th>
+                </tr>
+                <!-- Add 6 rows -->
+                <tr><td>Column B</td><td>Test Case Name</td><td>Test Case</td></tr>
+                <tr><td>Column C</td><td>Test Step Descrtption</td><td>Test Case Description</td></tr>
+                <tr><td>Column D</td><td>Test Level</td><td>Acceptance</td></tr>
+                <tr><td>Column E</td><td>Test Type</td><td>Functional</td></tr>
+                <tr><td>Column F</td><td>Test Category</td><td>Regression, Progression</td></tr>
+                <tr><td>Column H</td><td>Test Method</td><td>Hybrid, Manual, Automation</td></tr>
+				<tr><td>Column I</td><td>Application</td><td>Wholesale (App Group)-Tibco Wholesale (100343)</td></tr>
+				<tr><td>Column J</td><td>Channel</td><td>Wholesale</td></tr>
+				<tr><td>Column K</td><td>Journey Scenario</td><td>Buy new Service Plan or Subscription,  Manage Devices,  Manage Customer Profile,  Explore Product Offers / Promotions and Financing Options,  Manage Account,  View Bills and Receipts</td></tr>
+            </table>
+        </div>
+        <div id="linksContent" class="popup-content active">
+            <table class="popup-table">
+                <tr>
+                    <th>Scrum</th>
+                    <th>Link</th>
+                </tr>
+                <!-- Add 5 rows with links in Column 2 -->
+                <tr><td>WHSL Chromium</td><td><a href="https://qtest.t-mobile.com/p/1468/portal/project#tab=testdesign" target="_blank">https://qtest.t-mobile.com/p/1468/portal/project#tab=testdesign</a></td></tr>
+                <tr><td>WHSL Cobalt</td><td><a href="https://qtest.t-mobile.com/p/1470/portal/project#tab=testdesign" target="_blank">https://qtest.t-mobile.com/p/1470/portal/project#tab=testdesign</a></td></tr>
+                <tr><td>WHSL Copper</td><td><a href="https://qtest.t-mobile.com/p/1467/portal/project#tab=testdesign" target="_blank">https://qtest.t-mobile.com/p/1467/portal/project#tab=testdesign</a></td></tr>
+				<tr><td>WHSL Titanium</td><td><a href="https://qtest.t-mobile.com/p/1532/portal/project#tab=testdesign" target="_blank">https://qtest.t-mobile.com/p/1532/portal/project#tab=testdesign</a></td></tr>
+                <tr><td>WHSL Iron</td><td><a href="#">Link 5</a></td></tr>
+				<tr><td>WHSL Nickel</td><td><a href="https://qtest.t-mobile.com/p/1469/portal/project#tab=testdesign" target="_blank">https://qtest.t-mobile.com/p/1469/portal/project#tab=testdesign</a></td></tr>
+				<tr><td>WHSL Palladium</td><td><a href="#">Link 5</a></td></tr>
+				<tr><td>WHSL Vibranium</td><td><a href="#">Link 5</a></td></tr>
+            </table>
+        </div>
+    </div>
+
+    <script>
+	let manuallyUpdatedRows = new Set();
+let processedData = [];
+
+// Handle MD ID Prefix
+document.getElementById('mdId').addEventListener('input', function () {
+    const prefix = 'MD-';
+    if (!this.value.startsWith(prefix)) {
+        this.value = prefix + this.value.replace(prefix, '').trim();
+    }
+});
+        document.getElementById('excelFile').addEventListener('change', processExcel);
+function processExcel() {
+    const fileInput = document.getElementById('excelFile');
+
+    if (!fileInput.files.length) {
+        alert('Please upload a file.');
+        return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function (event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        let rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        // Filter out rows where column B (index 1) is empty, null, or undefined
+        processedData = rawData.filter(row => {
+            // Check if column B exists and has a non-empty value
+            return row[1] && row[1].toString().trim() !== '';
+        });
+
+        // Process the filtered data
+        for (let i = 0; i < processedData.length; i++) {
+            if (processedData[i].length < 10) {
+                while (processedData[i].length < 11) {
+                    processedData[i].push(null);
+                }
+            }
+            processedData[i][3] = 'Acceptance';
+            processedData[i][4] = 'Functional';
+            processedData[i][5] = processedData[i][5] || 'Progression';
+            processedData[i][7] = processedData[i][7] || 'Hybrid';
+            processedData[i][8] = 'Wholesale (App Group)-Tibco Wholesale (100343)';
+            processedData[i][9] = 'Wholesale';
+        }
+
+        addPrefixToTestCases();
+        displayTable(processedData);
+        updateDashboard();
+    };
+
+    reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('excelFile').addEventListener('change', processExcel);
+
+function addPrefixToTestCases() {
+    let tcCount = 1;
+    for (let i = 0; i < processedData.length; i++) {
+        if (processedData[i][1] && typeof processedData[i][1] === 'string' && processedData[i][1].trim() !== '') {
+            processedData[i][1] = 'TC' + String(tcCount).padStart(3, '0') + '_' + processedData[i][1].trim();
+            tcCount++;
+        }
+    }
+}
+addPrefixToTestCases();
+
+console.log("After:");
+console.log(processedData);
+
+        function applySelectedValues() {
+    const testMethod = document.getElementById('testMethod').value;
+    const testCategory = document.getElementById('testCategory').value;
+    const journeyScenario = document.getElementById('journeyScenario').value;
+
+    if (!processedData.length) {
+        alert('No data to apply values. Please upload and process a file first.');
+        return;
+    }
+
+    const rows = document.querySelectorAll('#outputTable tr');
+    let hasSelection = false;
+
+    rows.forEach((row, rowIndex) => {
+        if (rowIndex === 0) return; // Skip the header
+
+        const checkbox = row.querySelector('td input[type="checkbox"]');
+        if (checkbox && checkbox.checked) {
+            hasSelection = true;
+
+            // Update data
+            if (testCategory) {
+    processedData[rowIndex - 1][5] = testCategory;
+}
+if (testMethod) {
+    processedData[rowIndex - 1][7] = testMethod;
+}
+if (journeyScenario) {
+    processedData[rowIndex - 1][10] = journeyScenario;
+}
+            // ✅ Update dropdown UI and remove red highlight
+            const cells = row.querySelectorAll('td');
+            const journeyCell = cells[cells.length - 1]; // last cell should be Journey Scenario
+            const select = journeyCell.querySelector('select');
+            if (select) {
+                select.value = journeyScenario;
+                select.classList.remove('highlight-missing');
+                select.style.border = '';
+                select.style.backgroundColor = '';
+            }
+			manuallyUpdatedRows.add(rowIndex - 1);
+        }
+    });
+
+    if (!hasSelection) {
+        alert('Please select at least one row to apply changes.');
+        return;
+    }
+
+    displayTable(processedData);
+    updateDashboard();
+}
+
+        function displayTable(data) {
+    const outputTable = document.getElementById('outputTable');
+    outputTable.innerHTML = '';
+
+    const headers = ['Test Case(B)', 'Test Level(D)', 'Test Type(E)', 'Test Category(F)', 'Test Method(H)', 'Application(I)', 'Channel(J)', 'Journey Scenario(K)'];
+    const headerRow = document.createElement('tr');
+
+    const headerCheckboxCell = document.createElement('th');
+    const headerCheckbox = document.createElement('input');
+    headerCheckbox.type = 'checkbox';
+    headerCheckbox.style.transform = 'scale(1.5)';
+    headerCheckbox.style.margin = '5px';
+    headerCheckbox.addEventListener('change', function () {
+        const checkboxes = document.querySelectorAll('#outputTable tr td input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            if (row.style.display !== 'none') {
+                checkbox.checked = headerCheckbox.checked;
+            }
+        });
+    });
+    headerCheckboxCell.appendChild(headerCheckbox);
+    headerRow.appendChild(headerCheckboxCell);
+
+    headers.forEach((header, index) => {
+    const th = document.createElement('th');
+
+    if (index === 0) {
+        th.innerHTML = `${header} <span id="sortIndicator">▲▼</span>`;
+        th.style.cursor = 'pointer';
+        th.onclick = () => toggleSortByTestCase(data);
+    } else if (index === 3) {
+  th.innerHTML = `${header}
+    <span class='filter-icon' onclick='toggleFilterMenu(this, "category")'>
+        <i class="fa-solid fa-filter"></i>
+    </span>
+	<div class='filter-dropdown category-dropdown'>
+            <label><input type='checkbox' value='Progression' onchange='filterTable()'> Progression</label>
+            <label><input type='checkbox' value='Regression' onchange='filterTable()'> Regression</label>
+        </div>`;
+    } else if (index === 4) {
+  th.innerHTML = `${header}
+    <span class='filter-icon' onclick='toggleFilterMenu(this, "category")'>
+        <i class="fa-solid fa-filter"></i>
+    </span>
+	<div class='filter-dropdown method-dropdown'>
+            <label><input type='checkbox' value='Manual' onchange='filterTable()'> Manual</label>
+            <label><input type='checkbox' value='Hybrid' onchange='filterTable()'> Hybrid</label>
+            <label><input type='checkbox' value='Automation' onchange='filterTable()'> Automation</label>
+        </div>`;
+    } else if (index === 7) {
+  th.innerHTML = `${header}
+    <span class='filter-icon' onclick='toggleFilterMenu(this, "category")'>
+        <i class="fa-solid fa-filter"></i>
+    </span>
+	<div class='filter-dropdown journey-dropdown'>
+		    <label><input type='checkbox' value='No Matching' onchange='filterTable()'> No Matching</label>
+            <label><input type='checkbox' value='Buy new Service Plan or Subscription' onchange='filterTable()'> Buy new Service Plan or Subscription</label>
+            <label><input type='checkbox' value='Manage Devices' onchange='filterTable()'> Manage Devices</label>
+            <label><input type='checkbox' value='Manage Customer Profile' onchange='filterTable()'> Manage Customer Profile</label>
+            <label><input type='checkbox' value='Explore Product Offers / Promotions and Financing Options' onchange='filterTable()'> Explore Product Offers / Promotions and Financing Options</label>
+            <label><input type='checkbox' value='Manage Account' onchange='filterTable()'> Manage Account</label>
+            <label><input type='checkbox' value='View Bills and Receipts' onchange='filterTable()'> View Bills and Receipts</label>
+        </div>`;
+    } else {
+        th.textContent = header;
+    }
+
+    th.style.position = 'relative';
+    headerRow.appendChild(th);
+});
+
+
+    outputTable.appendChild(headerRow);
+
+    data.forEach((row, rowIndex) => {	
+        const tr = document.createElement('tr');
+
+        const checkboxCell = document.createElement('td');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.style.transform = 'scale(1.5)';
+        checkbox.style.margin = '5px';
+        checkboxCell.appendChild(checkbox);
+        tr.appendChild(checkboxCell);
+
+        row.forEach((cell, colIndex) => {
+            if (colIndex === 2 || colIndex === 6) return; // Skip unwanted columns
+
+            const cellElement = document.createElement('td');
+
+            if (colIndex === 5) { // Test Category
+                const select = document.createElement('select');
+                ['Progression', 'Regression'].forEach(optionValue => {
+                    const option = document.createElement('option');
+                    option.value = optionValue;
+                    option.textContent = optionValue;
+                    if (cell === optionValue) option.selected = true;
+                    select.appendChild(option);
+                });
+                select.addEventListener('change', function () {
+                    data[rowIndex][5] = select.value;
+                    updateDashboard();
+                });
+                cellElement.appendChild(select);
+            } else if (colIndex === 7) { // Test Method
+                const select = document.createElement('select');
+                ['Manual', 'Hybrid', 'Automation'].forEach(optionValue => {
+                    const option = document.createElement('option');
+                    option.value = optionValue;
+                    option.textContent = optionValue;
+                    if (cell === optionValue) option.selected = true;
+                    select.appendChild(option);
+                });
+                select.addEventListener('change', function () {
+                    data[rowIndex][7] = select.value;
+                    updateDashboard();
+                });
+                cellElement.appendChild(select);
+            } else if (colIndex === 10) { // Journey Scenario
+    const select = document.createElement('select');
+    const qatBotValue = document.getElementById('qatBot').value;
+
+    const options = [
+       'No Matching','Buy new Service Plan or Subscription', 'Manage Devices', 'Manage Customer Profile', 
+'Explore Product Offers / Promotions and Financing Options', 'Manage Account', 'View Bills and Receipts'
+
+    ];
+
+    const testCaseName = (data[rowIndex][1] || '').toLowerCase();
+    let autoSelect = '';
+    let matched = false;
+
+    // Keyword to scenario mapping
+  // More precise keyword to scenario mapping with word boundary checks
+const journeyKeywordMap = {
+    'Buy new Service Plan or Subscription': ['PartnerAPIAsyncResponse', 'TOMSConfiguration', 'CreateChannel', 'DeleteChannel', 'GetChannelConfigData', 'UpdateChannelConfigData', 
+            'DownloadTruststore', 'AddCertificate', 'UploadTruststore', 'ErrorHandlerandnegativetest', 'Livetesting', 'CheckSIMTransferType', 
+            'CheckSIMTransferEligibility', 'SIMTransferService', 'SIMTransferStatus', 'Other', 'GetBulkDetails', 'GetBulkStatus', 'ExecuteBulk', 
+            'ChangeSIMRestrictedUpdate', 'PartnerRefresh', 'ManageQODProfile/Createsession', 'ManageQODProfile/Deletesession', 'ServiceDelivery&ProvisioningModule', 'ServiceDelivery&ProvisioningModule'],
+	
+    'Manage Devices': ['Profilecallback', 'ProfileStatusNotification', 'Profilecallback', 'ProfileStatusNotification', 'Notifications', 'Orders', 'ProfileDelete', 
+            'ProfileDisable', 'ProfileDownload', 'ProfileEnable', 'QueryESIMProfile', 'UpdateSubscriptionJourney', 'dataloadSIMS', 'dataloadSearch', 
+            'profilessearch', 'updateprofile', 'CreateOrder', 'DeleteOrder', 'AuthenciateOrder', 'FinalizeOrder', 'CancelOrder', 'ConfirmOrder', 'downlioadOrder', 
+            'QueryProfileStatus', 'PairingIDSearch', 'QueryCompanionDevice', 'PairCompanion', 'UnPairCompanion', 'Activatewithpair', 'Reactivatewithpair'],
+
+    'Manage Customer Profile': ['PCW', 'GENAI','Vibranium'],
+	
+    'Explore Product Offers / Promotions and Financing Options': ['CheckNetworkCoverage','NetworkServices','NGPInquiry','QueryInfo','QueryNetwork','QuerySubscriberDetails','QueryAccount','QueryCIM','QueryDevice',
+            'QueryeSIMProfileStatus','QueryHLR','QueryIMEI','QueryNetwork','QueryPoolUsage','QueryProducts','QuerySIM','QuerySubscriberDetails','QuerySubscriberUsage',
+            'QueryTransactionStatus','NGPInquiry','QueryProducts','SubscriberInquiry','ValidateAddress','QueryDeviceUnlockStatus','CheckNetworkCoverageV2',
+            'QuerySubscriberHistory','QuerySubscriberProfileSummary'],
+
+    'Manage Account': ['CIMNotification', 'Notifications', 'SendAccountUsageNotification', 'SendAutoRenewalNotification', 'SendDeviceChangeNotification', 'SendNotification', 
+            'SendOTAMSISDN', 'SendSMS', 'SendStaticIPNotification', 'SendSubscriberProfileChangeNotification', 'SendUsageNotification', 'SMSReply', 
+            'ESIMProfileStatusNotifications', 'OMACPIIncompatabilityNotification', 'RoamingNotification', 'SendBulkSMS', 'Activate', 'AddSOC', 'AddProduct', 
+            'BillerSwitchActivation', 'CancelPortin', 'CancelSubscriber', 'CancelDeviceLocation', 'Change', 'ChangeIMEI', 'ChangeMSISDN', 'ChangeMSISDNWithMSISDN', 
+            'ChangePlan', 'ChangeSIM', 'ChangeSIMToPreviousSIM', 'CheckPortInEligibility', 'ConfirmSubscriber', 'CreatePortIn', 'DC2DCV2', 'Deactivate', 
+            'HLRBlockSIM', 'ManagePhoneList', 'ManageIMEIBlackList', 'ModifySubscriber', 'ModifySubscriberBucket', 'MoveSubscriberFromAccount', 
+            'MoveSubscriberToAccount', 'MultilineandPooling', 'NotifyPortActivity', 'PartnerPortOutValidation', 'Portin', 'PortinwithChangeMSISDN', 
+            'PortOutDeactivation', 'QueryPortIn', 'QueryPortInEligibility', 'QueryPortInStatus', 'ReactvateSubscriber', 'Reconcile', 
+            'RemoveSubscriberfromaccount', 'RemoveProduct', 'RemoveSOC', 'ReplaceProduct', 'ReserveSubscriber', 'ResetVoicemailPassword', 'Restore', 'Resume', 
+            'SearchSubscriber', 'Suspend', 'UpdateE911Address', 'UpdateSubscriberDetails', 'UpdateSubscriberProducts', 'UpdateSubscriberStatus', 
+            'UpdateLabel', 'UpdatePoolProducts', 'UpdatePortIn', 'UpdateRatePlanPricing', 'UpdateRetailBrandName', 'UpdateVMlanguage', 'UpdateWPS', 
+            'UsageEvents/ViewDUF,MUFFiles'],
+    'View Bills and Receipts': ['Adjustments','InvoiceValidation','Payments','MSISDNSIMStatusReport','MSISDNSIMSummaryReport','PlanEligibilityReport','PlanEligibilityReport-CSVafterunzip',
+            'StandardReports','CannedReports','RolesValidations','N/A','Rating,EADFPINIT&EADFPWORK&POSTEADFP','DailyAggregation','RADailyUsageSummandSubCountReport',
+            'BillingofRatingAccount','QODUsagesLoading','DPCIntermediateProcess','DataStaging','StatisticalElement','EventSummarization','MRCSummarization','QODSummerization',
+            'DistributeAdjustmentProcess','MPGProcessRun','BRPSProcessRun','RateSummarizedEvents','SnapshotFileLoading','IOTCCRBFileLoadingProcess','IDBandSDBProcess',
+            'IOTCCSummeriztaionProcess','IOTCCBGandPostBG','IMSIProvisioningFile','PenaltyProcessRun','IMSIMRCSummarizationProcess','BillingofBillingaccunt','BillDataWriter(BDW)',
+            '"MangedFileModifer(MFM)','"','Billformater(BF)','Invoice_Report&Invoice_Report.Summary','GLFeed','GLReport','BlacklineGLFeed','BalanceRollForwadReport',
+            'RADailyUsageSummandSubCountReport','RAMRCOverageReport','RAPlanDetailsReport','RANonPooledOverageReport','RATieredStepPricingReport','MPGSummaryTrackerReport',
+            'MPGRAReconReport','MPGMonthlyReport','MPGPendingAdjustmentReport','BRPSSummaryTrackerReport','BRPSRAReconReport','BRPSMonthlyReport','BRPSPendingAdjustmentReport',
+            'BRPSCancelledAdjustmentReport','AdvanceBillingReport(Ultra)','ExceptioncustomGLFeed(Ultra)','QoDReconciliationReport','IOTCCMPGMonthlyReport','IOTCCMPGPendingAdjustmentReport',
+            'IOTCCMPGRAReconReport','IOTCCMPGSummaryTrackerReport','CDRSummaryReport','BillingSummaryReport','OTCReport','OTCReconReport','BillableSLOReport','BillableSLOSummaryReport',
+            'SoxComplianceReport','DPCReport','BIFeeds','CombinedUnitReport','NonPooledOverageReport','DomesticLongDistanceReport','MintActivityReport(ULTRA)','MintReconReport(ULTRA)',
+            'WholesaleMRCSummaryReport','AHSDChargeReport(TF)','AHSDChargeSummaryReport(TF)','AHSDReconReport(TF)','MultilineDiscrepancyReport(TF)','MonthlyHSDReport(TF)','DailyHSDReport(TF)',
+            'DailyUsageSummSubsCountreport(TF)','MSISDNUsageReport','IMSIUsageSummaryReport','IMSIUsageandChargesReports','PenaltyReport','Billcyclereconreport','QODInvoiceReport','ODInvoiceSummaryReport',
+            'QODBillableSLOReport','QODDAILYCDRSummaryReport','InvoicevsInvoicechargesvalidationsemail','InvoicevsInvoicechargesvalidationsReport','Usagechargesvalidation','Subscriptionchargesvalidation',
+            'MRTValidationreport','InvoicechargesReport','Rateplanchargesreport','RPZonechargesReport','Rateplansnapshotreport','RPZonesnapshotreport','TaxFeed','USTTAXTRANSACTION','USTBUNDLEDETAILS',
+            'USTTAXDETAILS','MonthlyTaxReport','RevenueSummaryReport','MonthlyTaxReportsforQOD']
+};
+
+// More strict matching function that considers word boundaries
+function matchesKeyword(testCase, keyword) {
+    // Convert keyword to exact match pattern or word boundary pattern
+    const wordBoundaryPattern = new RegExp(`(^|[^a-zA-Z0-9])${keyword}([^a-zA-Z0-9]|$)`, 'i');
+    
+    // Try exact match first (case insensitive)
+    if (testCase.toLowerCase() === keyword.toLowerCase()) {
+        return true;
+    }
+    
+    // Then try word boundary match
+    return wordBoundaryPattern.test(testCase);
+}
+
+// Check for exact or more precise keyword matches
+for (const [scenario, keywords] of Object.entries(journeyKeywordMap)) {
+    // First try direct inclusion check with word boundaries
+    if (keywords.some(keyword => matchesKeyword(testCaseName, keyword))) {
+        autoSelect = scenario;
+        matched = true;
+        break;
+    }
+    
+    // If no direct match, try a looser check for partial matches but with higher threshold
+    if (!matched) {
+        for (const keyword of keywords) {
+            // Only match if the keyword is at least 5 characters and appears as a significant part
+            if (keyword.length >= 5 && testCaseName.toLowerCase().includes(keyword.toLowerCase())) {
+                autoSelect = scenario;
+                matched = true;
+                break;
+            }
+        }
+    }
+} 
+
+    if (!matched) {
+        autoSelect = cell || options[0]; // fallback
+    }
+
+    // Set the value in the data array
+    data[rowIndex][10] = autoSelect;
+
+    // Populate dropdown
+    options.forEach(optionValue => {
+        const option = document.createElement('option');
+        option.value = optionValue;
+        option.textContent = optionValue;
+        if (optionValue === autoSelect) option.selected = true;
+        select.appendChild(option);
+    });
+
+    // 🔴 Highlight if no match
+    if (!matched && !manuallyUpdatedRows.has(rowIndex)) {
+    select.classList.add('highlight-missing');
+}
+
+    // ✅ Remove highlight on change
+    select.addEventListener('change', function () {
+        data[rowIndex][10] = select.value;
+        select.classList.remove('highlight-missing');
+    });
+
+    cellElement.appendChild(select);
+} else {
+                cellElement.textContent = cell || '';
+            }
+
+            tr.appendChild(cellElement);
+        });
+
+        // Add Journey Scenario column if it doesn't already exist
+        if (row.length < 11) {
+            row[10] = '';
+        }
+
+
+        outputTable.appendChild(tr);
+    });
+
+    initializeSearch();
+}
+
+let sortAscending = true; // Tracks current sort order
+function updateDashboard() {
+    let countManual = 0;
+    let countHybrid = 0;
+    let countAutomation = 0;
+    let countProgression = 0;
+    let countRegression = 0;
+
+    processedData.forEach(row => {
+	    const testCategory = row[5];
+        const testMethod = row[7];
+        
+        if (testMethod === 'Manual') countManual++;
+        else if (testMethod === 'Hybrid') countHybrid++;
+        else if (testMethod === 'Automation') countAutomation++;
+        
+        if (testCategory === 'Progression') countProgression++;
+        else if (testCategory === 'Regression') countRegression++;
+    });
+
+    // Update the count for each method
+    document.getElementById('countManual').textContent = countManual;
+    document.getElementById('countHybrid').textContent = countHybrid;
+    document.getElementById('countAutomation').textContent = countAutomation;
+
+    // Update the count for each category
+    document.getElementById('countProgression').textContent = countProgression;
+    document.getElementById('countRegression').textContent = countRegression;
+
+    // Calculate and update the total
+    let total = countManual + countHybrid + countAutomation;
+    document.getElementById('countTotal').textContent = total;
+}
+
+function toggleSortByTestCase(data) {
+    const sortIndicator = document.getElementById('sortIndicator');
+    
+    // Sort data by the "Test Case(B)" column (index 1)
+    data.sort((a, b) => {
+        const valA = a[1] || ''; // Column 1
+        const valB = b[1] || '';
+        return sortAscending ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    });
+
+    // Toggle sort order
+    sortAscending = !sortAscending;
+
+    // Update the sort indicator
+    sortIndicator.textContent = sortAscending ? '▲' : '▼';
+
+    // Re-render the table
+    displayTable(data);
+	 updateDashboard();
+
+}
+
+        function downloadExcel() {
+    const storyId = document.getElementById('storyId').value;
+    const mdId = document.getElementById('mdId').value;
+
+    if (!storyId || !mdId) {
+        alert('⚠️ Please enter both Story ID and MD ID before downloading the file.');
+        return;
+    }
+
+    if (processedData.length === 0) {
+        alert('No data to download. Please process the file first.');
+        return;
+    }
+
+    // Check for "No Matching" in Journey Scenario column
+    // Assuming Journey Scenario is in a known column index (e.g., index 2)
+    const journeyScenarioColumnIndex = 10; // ← Change if different
+
+    const hasNoMatching = processedData.some(row => {
+        // row can be an array or object depending on how processedData is built
+        if (Array.isArray(row)) {
+            return row[journeyScenarioColumnIndex] && row[journeyScenarioColumnIndex].toString().trim() === 'No Matching';
+        } else if (typeof row === 'object') {
+            // Optional, if processedData is object form, adjust accordingly
+            return Object.values(row).some(val => val && val.toString().trim() === 'No Matching');
+        }
+        return false;
+    });
+
+    if (hasNoMatching) {
+	
+    alert(
+	'⚠️ Journey Scenario = " No Matching". Please select a valid Journey Scenario.');
+    return;
+}
+
+    const worksheet = XLSX.utils.aoa_to_sheet(processedData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, mdId);
+
+    XLSX.writeFile(workbook, `${storyId}.xlsx`);
+}
+
+		 function togglePopup() {
+            const popup = document.getElementById('infoPopup');
+            const overlay = document.querySelector('.overlay');
+            const isVisible = popup.style.display === 'block';
+
+            popup.style.display = isVisible ? 'none' : 'block';
+            overlay.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function showTab(tabId) {
+            document.querySelectorAll('.popup-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.popup-tabs button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            document.getElementById(`${tabId}Content`).classList.add('active');
+            document.getElementById(`${tabId}Tab`).classList.add('active');
+        }
+		function initializeSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchText = this.value.toLowerCase();
+            const table = document.getElementById('outputTable');
+            const rows = table.getElementsByTagName('tr');
+
+            // Start from 1 to skip header row
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                if (cells.length > 0) {
+                    const testCaseCell = cells[1]; // Column B (second column, index 1)
+                    const text = testCaseCell.textContent || testCaseCell.innerText;
+                    if (text.toLowerCase().indexOf(searchText) > -1) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            }
+            updateDashboard();
+        });
+    }
+}
+function toggleFilterMenu(icon, type) {
+    const dropdown = icon.parentElement.querySelector('.filter-dropdown');
+    const allDropdowns = document.querySelectorAll('.filter-dropdown');
+    allDropdowns.forEach(d => {
+        if (d !== dropdown) d.style.display = 'none';
+    });
+    dropdown.style.display = dropdown && dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+
+function filterTable() {
+  const categoryChecked = Array.from(document.querySelectorAll('.category-dropdown input[type="checkbox"]:checked')).map(cb => cb.value);
+  const methodChecked = Array.from(document.querySelectorAll('.method-dropdown input[type="checkbox"]:checked')).map(cb => cb.value);
+  const journeyChecked = Array.from(document.querySelectorAll('.journey-dropdown input[type="checkbox"]:checked')).map(cb => cb.value);
+
+  const rows = document.querySelectorAll('#outputTable tr');
+
+  rows.forEach((row, index) => {
+    if (index === 0) return; // Skip header row
+    
+    const cells = row.querySelectorAll('td');
+    
+    // Get values from the select elements in the cells
+    const categoryCell = cells[4]; // Test Category cell (5th cell, index 4)
+    const methodCell = cells[5];   // Test Method cell (6th cell, index 5)
+    const journeyCell = cells[8]; // Journey Scenario cell (8th cell, index 7)
+    
+    // Get the selected values from the select elements
+    const cat = categoryCell?.querySelector('select')?.value;
+    const method = methodCell?.querySelector('select')?.value;
+    const journey = journeyCell?.querySelector('select')?.value;
+
+    // Determine if the row should be shown based on the filter criteria
+    const showCat = categoryChecked.length === 0 || categoryChecked.includes(cat);
+    const showMethod = methodChecked.length === 0 || methodChecked.includes(method);
+    const showJourney = journeyChecked.length === 0 || journeyChecked.includes(journey);
+
+    row.style.display = showCat && showMethod && showJourney ? '' : 'none';
+  });
+
+  // Update counts after filtering
+  updateDashboard();
+}
+
+function deleteSelectedRows() {
+    const rows = document.querySelectorAll('#outputTable tr');
+    let hasSelection = false;
+
+    // Traverse rows and delete those with selected checkboxes
+    for (let i = rows.length - 1; i > 0; i--) { // Start from the bottom to avoid index issues
+        const row = rows[i];
+        const checkbox = row.querySelector('td input[type="checkbox"]');
+
+        if (checkbox && checkbox.checked) {
+            // Remove the corresponding data from `processedData`
+            processedData.splice(i - 1, 1);
+            hasSelection = true;
+        }
+    }
+
+    if (!hasSelection) {
+        alert('⚠️ Please select at least one row to delete.');
+        return;
+    }
+
+    // ✅ Recalculate and reassign TC numbers
+    reassignTestCaseNumbers();
+
+    // ✅ Refresh table and dashboard
+    displayTable(processedData);
+    updateDashboard();
+}
+
+function reassignTestCaseNumbers() {
+    for (let i = 0; i < processedData.length; i++) {
+        // Strip any existing TC prefix
+        const originalName = processedData[i][1].split('_').slice(1).join('_') || processedData[i][1];
+        processedData[i][1] = 'TC' + String(i + 1).padStart(3, '0') + '_' + originalName;
+    }
+}
+
+function updateJourneyOptions() {
+    const qatBotValue = document.getElementById('qatBot').value;
+    const journeyDropdown = document.getElementById('journeyScenario');
+
+    // Clear existing options
+    journeyDropdown.innerHTML = '';
+
+    let options = [];
+
+    if (qatBotValue === 'QAT') {
+        options = ['Buy new Service Plan or Subscription', 'Manage Devices', 'Manage Customer Profile', 
+'Explore Product Offers / Promotions and Financing Options', 'Manage Account', 'View Bills and Receipts'];
+    } else if (qatBotValue === 'BOT') {
+        options = ['Manage Customer Profile', 'Buy new Service Plan or Subscription', 'View Bills and Receipts'];
+    }
+
+    journeyDropdown.appendChild(new Option('Select Journey Scenario', '', true, true));
+options.forEach(opt => {
+    const option = new Option(opt, opt);
+    journeyDropdown.appendChild(option);
+});
+
+}
+
+// Initialize default options
+window.onload = updateJourneyOptions;
+
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.filter-dropdown') && !event.target.closest('.filter-icon')) {
+        document.querySelectorAll('.filter-dropdown').forEach(d => d.style.display = 'none');
+    }
+});
+function filterTableByHeader(data) {
+    const rows = document.querySelectorAll('#outputTable tr');
+    let categoryChecks = [];
+    let methodChecks = [];
+
+    const ths = document.querySelectorAll('#outputTable th');
+
+    ths.forEach(th => {
+        const text = th.innerText || th.textContent;
+        if (text.includes('Test Category')) {
+            categoryChecks = Array.from(th.querySelectorAll('.filter-dropdown input'))
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+        } else if (text.includes('Test Method')) {
+            methodChecks = Array.from(th.querySelectorAll('.filter-dropdown input'))
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+        }
+    });
+
+    rows.forEach((row, index) => {
+        if (index === 0) return;
+        const cells = row.querySelectorAll('td');
+        const category = cells[4].querySelector('select').value;
+        const method = cells[5].querySelector('select').value;
+
+        const matchCategory = categoryChecks.length === 0 || categoryChecks.includes(category);
+        const matchMethod = methodChecks.length === 0 || methodChecks.includes(method);
+        row.style.display = matchCategory && matchMethod ? '' : 'none';
+    });
+
+    updateDashboard();
+}
+function clearAllFilters() {
+    // Uncheck all category, method, and journey filter checkboxes
+    document.querySelectorAll('.filter-dropdown input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+    // Clear the search input
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = '';
+
+    // Reset all rows to visible
+    const rows = document.querySelectorAll('#outputTable tr');
+    rows.forEach((row, index) => {
+        if (index !== 0) row.style.display = '';
+    });
+
+    updateDashboard();
+}
+
+function refresh() {
+    // Clear all form inputs
+    document.getElementById('storyId').value = '';
+    document.getElementById('mdId').value = '';
+    document.getElementById('testCategory').value = '';
+    document.getElementById('testMethod').value = '';
+    document.getElementById('qatBot').value = 'QAT';
+    document.getElementById('journeyScenario').value = '';
+
+    // Clear file input
+    document.getElementById('excelFile').value = '';
+
+    // Clear processed data and table
+    processedData = [];
+    manuallyUpdatedRows.clear();
+    document.getElementById('outputTable').innerHTML = '';
+
+    // Reset dashboard counts
+    updateDashboard();
+
+    // Clear search input and filters
+    document.getElementById('searchInput').value = '';
+    clearAllFilters();
+}
+    </script>
+</body>
+
+</html>
