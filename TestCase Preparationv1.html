@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Upload with Text Input Dropdown</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+	
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 5px;
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 2000px;
+            margin: 0.5rem auto;
+            background-color: white;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .form-group label {
+            min-width: 140px;
+            font-weight: bold;
+        }
+        .form-control {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 250px;
+        }
+        select.form-control {
+            min-width: 250px;
+        }
+        .textInputDropdown {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 300px;
+            width: 98%;
+        }
+        .search-inputs {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin: 15px 0;
+        }
+        .search-inputs input {
+            width: 250px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button { 
+            background-color: #007BFF; 
+            color: white; 
+            border: none; 
+            padding: 10px 15px; 
+            cursor: pointer; 
+            border-radius: 5px; 
+        }
+        button:hover { 
+            background-color: #0056b3; 
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px; 
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #007BFF; 
+            color: white; 
+        }
+        tr:nth-child(even) { 
+            background-color: #f2f2f2; 
+        }
+        .dropdown-container { 
+            position: relative; 
+            width: 100%;
+        }
+        .dropdown-content { 
+            display: none; 
+            position: absolute; 
+            background: white; 
+            border: 1px solid #ddd; 
+            max-height: 200px; 
+            overflow-y: auto; 
+            z-index: 1000;
+            width: 100%;
+        }
+        .dropdown-search { 
+            width: 100%; 
+            padding: 10px; 
+            box-sizing: border-box;
+        }
+        .dropdown-content label { 
+            display: block; 
+            padding: 8px; 
+            cursor: pointer; 
+        }
+        .dropdown-content label:hover { 
+            background-color: #f1f1f1; 
+        }
+        td[contenteditable="true"] { 
+            background-color: #f9f9f9; 
+            cursor: text; 
+        }
+        .highlight { 
+            background-color: yellow; 
+            font-weight: bold; 
+        }
+        .add-options {
+            position: absolute;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+        }
+        .add-options button {
+            display: block;
+            width: 100%;
+            padding: 8px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            color: #333;
+            transition: background-color 0.2s;
+        }
+        .add-options button:hover {
+            background-color: #e9ecef;
+            color: #007BFF;
+        }
+		.highlight {
+    background-color: yellow;
+    font-weight: bold;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="form-group">
+            <label for="fileInput">Upload Excel:</label>
+            <input type="file" id="fileInput" accept=".xlsx, .xls" class="form-control">
+            <label for="sheetSelector">Select Sheet:</label>
+            <select id="sheetSelector" class="form-control"></select>
+			<label for="textInputDropdown">Select Test Cases:</label>
+            <div class="dropdown-container">
+                <input type="text" id="textInputDropdown" class="textInputDropdown" placeholder="Search and Select TestCases" readonly>
+                <div class="dropdown-content" id="dropdown">
+                    <input type="text" class="dropdown-search" placeholder="Search TestCases...">
+                    <div id="dropdownItems">
+                        <label><input type="checkbox" id="selectAll"> Select All</label>
+                    </div>
+                </div>
+            </div>
+            <button id="addButton">Add</button>
+        </div>
+
+        <!-- Find and Replace Section -->
+        <div class="form-group">
+            <label for="findWhat">Find What:</label>
+            <input type="text" id="findWhat" class="form-control" placeholder="Enter text to find">
+            <label for="replaceWith">Replace With:</label>
+            <input type="text" id="replaceWith" class="form-control" placeholder="Enter replacement text">
+            <button id="replaceButton">Replace</button>
+			<label for="categorySelector">Select Category:</label>
+            <select id="categorySelector" class="form-control">
+                <option value="WebPortal">WebPortal</option>
+                <option value="RestAPI">RestAPI</option>
+                <option value="PCW">PCW</option>
+                <option value="TOMS">TOMS</option>
+            </select>
+            <button id="updateCategoryButton">Update Category</button>
+			            <button id="downloadButton">Download</button>
+        </div>
+        </div>
+
+        <!-- Data Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="headerSelectAll"></th>
+                    <th>Test Case ID</th>
+                    <th>Category</th>
+                    <th>Test Title</th>
+                    <th>Test Description</th>
+                    <th>Ad-Dup</th>
+                    <th>Del</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+
+        <div class="add-options" id="addOptions">
+            <button class="duplicate-option">Duplicate Row</button>
+            <button class="empty-option">Empty Row</button>
+        </div>
+    </div> 
+
+    <script>
+        let workbook;
+        const textInputDropdown = document.getElementById('textInputDropdown');
+        const dropdownItems = document.getElementById('dropdownItems');
+        const dropdownSearch = document.querySelector('.dropdown-search');
+        const dropdown = document.getElementById('dropdown');
+
+        // Toggle dropdown visibility
+        textInputDropdown.addEventListener('click', function() {
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!dropdown.contains(event.target) && event.target !== textInputDropdown) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            let file = event.target.files[0];
+            let reader = new FileReader();
+            reader.readAsBinaryString(file);
+            reader.onload = function(e) {
+                let data = e.target.result;
+                workbook = XLSX.read(data, { type: 'binary' });
+                let sheetSelector = document.getElementById('sheetSelector');
+                sheetSelector.innerHTML = '';
+
+                workbook.SheetNames.forEach(sheetName => {
+                    let option = document.createElement('option');
+                    option.value = sheetName;
+                    option.textContent = sheetName;
+                    sheetSelector.appendChild(option);
+                });
+
+                displaySheetData(workbook.SheetNames[0]);
+            };
+        });
+
+        document.getElementById('sheetSelector').addEventListener('change', function() {
+            displaySheetData(this.value);
+        });
+
+        function createEmptyRow() {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="checkbox" class="rowSelect"></td>
+                <td></td>
+                <td>
+                    <select>
+                        <option>WebPortal</option>
+                        <option>RestAPI</option>
+                        <option>PCW</option>
+                        <option>TOMS</option>
+                    </select>
+                </td>
+                <td contenteditable="true" class="highlightable"></td>
+                <td contenteditable="true" class="highlightable"></td>
+                <td><button class="action-btn add-btn">Add</button></td>
+                <td><button class="action-btn delete-btn">Delete</button></td>
+            `;
+            return row;
+        }
+
+        function createRowFromData(data) {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="checkbox" class="rowSelect"></td>
+                <td></td>
+                <td>
+                    <select>
+                        <option>WebPortal</option>
+                        <option>RestAPI</option>
+                        <option>PCW</option>
+                        <option>TOMS</option>
+                    </select>
+                </td>
+                <td contenteditable="true" class="highlightable">${highlightText(data.title || '')}</td>
+                <td contenteditable="true" class="highlightable">${highlightText(data.description || '')}</td>
+                <td><button class="action-btn add-btn">Add</button></td>
+                <td><button class="action-btn delete-btn">Delete</button></td>
+            `;
+            return row;
+        }
+
+        function displaySheetData(sheetName) {
+            let sheet = workbook.Sheets[sheetName];
+            let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            dropdownItems.innerHTML = '<label><input type="checkbox" id="selectAll"> Select All</label>';
+
+            for (let i = 1; i < jsonData.length; i++) {
+                if (jsonData[i][0] && jsonData[i][1]) {
+                    dropdownItems.innerHTML += `
+                        <label>
+                            <input type="checkbox" class="rowCheckbox" 
+                                   data-a="${jsonData[i][0]}" 
+                                   data-b="${jsonData[i][1]}"> 
+                            ${jsonData[i][0]}
+                        </label>
+                    `;
+                }
+            }
+
+            // Select All functionality
+            const selectAllCheckbox = document.getElementById('selectAll');
+            selectAllCheckbox.addEventListener('change', function() {
+                const rowCheckboxes = document.querySelectorAll('.rowCheckbox');
+                rowCheckboxes.forEach(checkbox => {
+                    checkbox.checked = selectAllCheckbox.checked;
+                });
+                updateSelectedText();
+            });
+
+            // Individual checkbox change handling
+            const rowCheckboxes = document.querySelectorAll('.rowCheckbox');
+            rowCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedText);
+            });
+
+            // Search functionality
+            dropdownSearch.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const labels = dropdownItems.querySelectorAll('label');
+                
+                labels.forEach(label => {
+                    const text = label.textContent.toLowerCase();
+                    label.style.display = text.includes(searchTerm) ? 'block' : 'none';
+                });
+            });
+        }
+
+        function updateSelectedText() {
+            const selectedCheckboxes = document.querySelectorAll('.rowCheckbox:checked');
+            const selectedTexts = Array.from(selectedCheckboxes)
+                .map(checkbox => checkbox.parentElement.textContent.trim())
+                .join(', ');
+            
+            textInputDropdown.value = selectedTexts || 'Select Options';
+        }
+		
+		function createEmptyRow() {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="checkbox" class="rowSelect"></td>
+                <td></td>
+                <td>
+                    <select>
+                        <option>WebPortal</option>
+                        <option>RestAPI</option>
+                        <option>PCW</option>
+                        <option>TOMS</option>
+                    </select>
+                </td>
+                <td contenteditable="true" class="highlightable"></td>
+                <td contenteditable="true" class="highlightable"></td>
+                <td><button class="action-btn add-btn">Add</button></td>
+                <td><button class="action-btn delete-btn">Delete</button></td>
+            `;
+            return row;
+        }
+
+        function createRowFromData(data) {
+            let row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="checkbox" class="rowSelect"></td>
+                <td></td>
+                <td>
+                    <select>
+                        <option>WebPortal</option>
+                        <option>RestAPI</option>
+                        <option>PCW</option>
+                        <option>TOMS</option>
+                    </select>
+                </td>
+                <td contenteditable="true" class="highlightable">${highlightText(data.title || '')}</td>
+                <td contenteditable="true" class="highlightable">${highlightText(data.description || '')}</td>
+                <td><button class="action-btn add-btn">Add</button></td>
+                <td><button class="action-btn delete-btn">Delete</button></td>
+            `;
+            return row;
+        }
+		
+		 const addOptions = document.getElementById('addOptions');
+        let currentAddButton = null;
+
+       document.getElementById('addButton').addEventListener('click', function() {
+            let tableBody = document.getElementById('tableBody');
+            document.querySelectorAll('.rowCheckbox:checked').forEach((checkbox) => {
+                const data = {
+                    title: checkbox.dataset.a,
+                    description: checkbox.dataset.b
+                };
+                tableBody.appendChild(createRowFromData(data));
+                updateRowNumbers();
+            });
+        });
+        // Event delegation for Add and Delete buttons
+         document.getElementById('tableBody').addEventListener('click', function(e) {
+            if (e.target.classList.contains('add-btn')) {
+                e.stopPropagation(); // Prevent event from bubbling up
+                
+                // If clicking the same button that's already open, close it
+                if (currentAddButton === e.target && addOptions.style.display === 'block') {
+                    addOptions.style.display = 'none';
+                    currentAddButton = null;
+                    return;
+                }
+				     const buttonRect = e.target.getBoundingClientRect();
+                addOptions.style.display = 'block';
+                addOptions.style.top = `${buttonRect.bottom + window.scrollY}px`;
+                addOptions.style.left = `${buttonRect.left}px`;
+                currentAddButton = e.target;
+            } else if (e.target.classList.contains('delete-btn')) {
+                e.target.closest('tr').remove();
+                updateRowNumbers();
+            }
+        });
+
+        document.getElementById('headerSelectAll').addEventListener('change', function() {
+            document.querySelectorAll('.rowSelect').forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+
+        function highlightText(text) {
+            return text.replace(/(@\w+)/g, '<span class="highlight">$1</span>');
+        }
+
+                function updateRowNumbers() {
+            document.querySelectorAll('#tableBody tr').forEach((row, index) => {
+                // Format: TC001, TC002, etc.
+                const formattedNumber = `TC${String(index + 1).padStart(3, '0')}`;
+                row.cells[1].textContent = formattedNumber;
+            });
+        }
+
+document.getElementById('replaceButton').addEventListener('click', function() {
+    let findText = document.getElementById('findWhat').value;
+    let replaceText = document.getElementById('replaceWith').value;
+    
+    // Get all selected rows
+    const selectedRows = document.querySelectorAll('#tableBody input[type="checkbox"]:checked');
+    
+    // Check if any rows are selected
+    if (selectedRows.length === 0) {
+        alert('Error: Please select at least one row to perform replace operation.');
+        return;
+    }
+    
+    if (findText) {
+        selectedRows.forEach(checkbox => {
+            // Get the parent row
+            const row = checkbox.closest('tr');
+            
+            // Get editable cells in the selected row
+            const editableCells = row.querySelectorAll('td[contenteditable="true"]');
+            
+            editableCells.forEach(cell => {
+                // First, remove any existing highlight spans to work with pure text
+                let currentText = cell.textContent;
+                
+                // Create a case-insensitive regular expression for the find/replace
+                const regex = new RegExp(findText, 'gi');
+                
+                // Replace the text and wrap it in bold tags
+                currentText = currentText.replace(regex, `<strong>${replaceText}</strong>`);
+                
+                // Now reapply highlighting for any @mentions
+                // This regex will match any word starting with @
+                // We need to avoid matching @ mentions inside the replaced text
+                cell.innerHTML = currentText.replace(/(@\w+)(?![^<]*>)/g, '<span class="highlight">$1</span>');
+            });
+        });
+    }
+});
+
+        document.getElementById('updateCategoryButton').addEventListener('click', function() {
+            let selectedCategory = document.getElementById('categorySelector').value;
+            document.querySelectorAll('#tableBody input[type="checkbox"]:checked').forEach(checkbox => {
+                let row = checkbox.closest('tr');
+                let categoryCell = row.cells[2].querySelector('select');
+                categoryCell.value = selectedCategory;
+            });
+        });
+
+   document.getElementById('downloadButton').addEventListener('click', function() {
+            let tableData = [['Row #', 'Test Title', 'Test Description']];
+            document.querySelectorAll('#tableBody tr').forEach(row => {
+                let rowNumber = row.cells[1].textContent;
+                let category = row.cells[2].querySelector('select').value;
+                let testTitle = row.cells[3].textContent;
+                let testDescription = row.cells[4].textContent;
+                tableData.push([rowNumber, `[${category}]_${testTitle}`, testDescription]);
+            });
+            let ws = XLSX.utils.aoa_to_sheet(tableData);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            XLSX.writeFile(wb, "export.xlsx");
+        });
+		
+		document.getElementById('tableBody').addEventListener('click', function(e) {
+            if (e.target.classList.contains('add-btn')) {
+                const buttonRect = e.target.getBoundingClientRect();
+                addOptions.style.display = 'block';
+                addOptions.style.top = `${buttonRect.bottom + window.scrollY}px`;
+                addOptions.style.left = `${buttonRect.left}px`;
+                currentAddButton = e.target;
+                e.stopPropagation();
+            } else if (e.target.classList.contains('delete-btn')) {
+                e.target.closest('tr').remove();
+                updateRowNumbers();
+            }
+        });
+		    document.querySelector('.duplicate-option').addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event from bubbling up
+            if (currentAddButton) {
+                const currentRow = currentAddButton.closest('tr');
+                const newRow = currentRow.cloneNode(true);
+                currentRow.after(newRow);
+                updateRowNumbers();
+                addOptions.style.display = 'none';
+                currentAddButton = null;
+            }
+        });
+		
+		  document.querySelector('.empty-option').addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event from bubbling up
+            if (currentAddButton) {
+                const currentRow = currentAddButton.closest('tr');
+                const newRow = createEmptyRow();
+                currentRow.after(newRow);
+                updateRowNumbers();
+                addOptions.style.display = 'none';
+                currentAddButton = null;
+            }
+        });
+		   document.addEventListener('click', function() {
+            if (addOptions.style.display === 'block') {
+                addOptions.style.display = 'none';
+                currentAddButton = null;
+            }
+        });
+
+        // Prevent dropdown from closing when clicking inside it
+        addOptions.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    </script>
+</body>
+</html>
